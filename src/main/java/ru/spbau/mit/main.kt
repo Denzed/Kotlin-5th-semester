@@ -2,16 +2,8 @@ package ru.spbau.mit
 
 import java.util.*
 
-data class Move(val dy: Int, val dx: Int) {
-
-    companion object {
-        private val north = Move(-1, 0)
-        private val east  = Move(0, 1)
-        private val south = Move(1, 0)
-        private val west  = Move(0, -1)
-
-        val directions = listOf(north, east, south, west)
-    }
+enum class Direction(val dy: Int, val dx: Int) {
+    North(-1, 0), East(0, 1), South(1, 0), West(0, -1)
 }
 
 data class Lake(val size: Int, val y: Int, val x: Int)
@@ -20,14 +12,15 @@ class Problem(
         private val n: Int,
         private val m: Int,
         private val k: Int,
-        private val field: Array<String>) {
+        private val field: Array<String>
+) {
 
     private val used: MutableList<MutableList<Boolean>> =
-            Array(n) { BooleanArray(m) { false }.toMutableList() }.toMutableList()
+            MutableList(n) { MutableList(n, { false }) }
 
     private fun resetUsed() {
         used.clear()
-        used.addAll(Array(n) { BooleanArray(m) { false }.toMutableList() })
+        used.addAll(MutableList(n) { MutableList(n, { false }) })
     }
 
     private fun isNewWaterTile(y: Int, x: Int): Boolean =
@@ -39,9 +32,9 @@ class Problem(
     private fun traverseLake(y: Int, x: Int): Int? {
         used[y][x] = true
         var result = if (y in 1..(n - 2) && x in 1..(m - 2)) 1 else null
-        for (move in Move.directions) {
-            val newY = y + move.dy
-            val newX = x + move.dx
+        for (direction in Direction.values()) {
+            val newY = y + direction.dy
+            val newX = x + direction.dx
             if (isNewWaterTile(newY, newX)) {
                 val tempResult = traverseLake(newY, newX)
                 if (result != null && tempResult != null) {
@@ -76,11 +69,11 @@ class Problem(
         val drainedTiles = lakesToDrain.sumBy(Lake::size)
         lakesToDrain.forEach { lake -> traverseLake(lake.y, lake.x) }
         val resultField = Array(n, { y ->
-            val resultLine = StringBuilder(m)
-            for (x in 0 until m) {
-                resultLine.append(if (used[y][x]) '*' else field[y][x])
+            buildString {
+                for (x in 0 until m) {
+                    append(if (used[y][x]) '*' else field[y][x])
+                }
             }
-            resultLine.toString()
         })
         return Pair(drainedTiles, resultField)
     }
