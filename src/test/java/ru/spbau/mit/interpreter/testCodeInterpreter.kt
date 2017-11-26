@@ -34,18 +34,18 @@ class TestCodeInterpreter {
     @Test
     fun testLiteral() {
         val code = "println(179)"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("179\n")
     }
 
     @Test(expected = VariableUndefinedException::class)
     fun testUndefinedIdentifier() {
-        FunInterpreter.interpretCode("println(_s179)")
+        interpretCode("println(_s179)")
     }
 
     @Test
     fun testIdentifier() {
-        FunInterpreter.interpretCode("var _s179 = 179\n" +
+        interpretCode("var _s179 = 179\n" +
                 "println(_s179)")
         assertPrints("179\n")
     }
@@ -53,7 +53,7 @@ class TestCodeInterpreter {
     @Test
     fun testVariableDefinition() {
         val code = "var _s179 = 179"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("")
     }
 
@@ -61,14 +61,14 @@ class TestCodeInterpreter {
     fun testVariableAssignment() {
         val code = "var _s179 = 0\n" +
                 "_s179 = 179"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("")
     }
 
     @Test
     fun testBinaryOperation() {
         val code = "println(1 + 178)"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("179\n")
     }
 
@@ -77,7 +77,7 @@ class TestCodeInterpreter {
         val code = "fun sum(a, b) {\n" +
                 "   return a + b\n" +
                 "}"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("")
     }
 
@@ -87,14 +87,14 @@ class TestCodeInterpreter {
                 "   return a + b\n" +
                 "}\n" +
                 "println(sum(178, 1))"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("179\n")
     }
 
     @Test
     fun testEmptyPrintlnCall() {
         val code = "println()"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("\n")
     }
 
@@ -105,7 +105,7 @@ class TestCodeInterpreter {
                 "println(i)" +
                 "i = i - 1" +
                 "}"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("1\n" +
                 "0\n")
     }
@@ -115,7 +115,7 @@ class TestCodeInterpreter {
         val code = "if (1) {\n" +
                 "println(1)\n" +
                 "}"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("1\n")
     }
 
@@ -124,27 +124,27 @@ class TestCodeInterpreter {
         val code = "if (0) {\n" +
                 "println(1)\n" +
                 "}"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("")
     }
 
     @Test(expected = InvalidReturnStatementException::class)
     fun testReturnStatement() {
         val code = "return 179"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("")
     }
 
     @Test
-    fun testBracedExpression() {
+    fun testParenthesizedExpression() {
         val code = "println((1))"
-        FunInterpreter.interpretCode(code)
+        interpretCode(code)
         assertPrints("1\n")
     }
 
     @Test
     fun testFirstSample() {
-        FunInterpreter.interpretCode("var a = 10\n" +
+        interpretCode("var a = 10\n" +
                 "var b = 20\n" +
                 "if (a > b) {\n" +
                 "    println(1)\n" +
@@ -156,7 +156,7 @@ class TestCodeInterpreter {
 
     @Test
     fun testSecondSample() {
-        FunInterpreter.interpretCode("fun fib(n) {\n" +
+        interpretCode("fun fib(n) {\n" +
                 "    if (n <= 1) {\n" +
                 "        return 1\n" +
                 "    }\n" +
@@ -177,7 +177,7 @@ class TestCodeInterpreter {
 
     @Test
     fun testThirdSample() {
-        FunInterpreter.interpretCode("fun foo(n) {\n" +
+        interpretCode("fun foo(n) {\n" +
                 "    fun bar(m) {\n" +
                 "        return m + n\n" +
                 "    }\n" +

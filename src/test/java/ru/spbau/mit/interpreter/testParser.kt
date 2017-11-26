@@ -106,7 +106,7 @@ class TestCodeParser {
     }
 
     @Test
-    fun testBracedExpression() {
+    fun testParenthesizedExpression() {
         val code = "(1)"
         assert(parsesCode(code))
     }

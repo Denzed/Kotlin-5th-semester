@@ -1,36 +1,31 @@
 package ru.spbau.mit.interpreter.ast
 
 import org.antlr.v4.runtime.ParserRuleContext
+import ru.spbau.mit.interpreter.ast.nodes.*
+import ru.spbau.mit.interpreter.ast.nodes.Number
 import ru.spbau.mit.parser.FunBaseVisitor
 import ru.spbau.mit.parser.FunParser
 
-private fun getStartPosition(context: ParserRuleContext): Pair<Int,Int> {
-    return Pair(context.start.line, context.start.charPositionInLine)
-}
+private fun getStartPosition(context: ParserRuleContext): Pair<Int,Int> =
+        Pair(context.start.line, context.start.charPositionInLine)
 
 private val Boolean.int get() = if (this) 1 else 0
 
-class ASTBuilder : FunBaseVisitor<ASTNode>() {
-    private val expressionBuilder = ExpressionBuilder()
-
+object ASTBuilder : FunBaseVisitor<ASTNode>() {
     override fun visitFile(context: FunParser.FileContext): File =
             File(getStartPosition(context), visitBlock(context.block()))
 
-    override fun visitBracedBlock(context: FunParser.BracedBlockContext): BracedBlock =
-            BracedBlock(getStartPosition(context), visitBlock(context.block()))
+    override fun visitParenthesizedBlock(context: FunParser.ParenthesizedBlockContext): ParenthesizedBlock =
+            ParenthesizedBlock(getStartPosition(context), visitBlock(context.block()))
 
     override fun visitBlock(context: FunParser.BlockContext): Block =
             Block(getStartPosition(context),
                     context.statement()
                             .map(this::visitStatement))
 
-    override fun visitStatement(context: FunParser.StatementContext): Statement {
-        val result = visitChildren(context)
-        return when (result) {
-            is Statement -> result
-            else -> throw UnknownStatementException(getStartPosition(context))
-        }
-    }
+    override fun visitStatement(context: FunParser.StatementContext): Statement =
+            visitChildren(context) as? Statement ?:
+                    throw UnknownStatementException(getStartPosition(context))
 
     override fun visitFunctionDefinition(
             context: FunParser.FunctionDefinitionContext
@@ -44,7 +39,7 @@ class ASTBuilder : FunBaseVisitor<ASTNode>() {
                 getStartPosition(context),
                 name,
                 argumentNames,
-                visitBracedBlock(context.bracedBlock()).underlyingBlock)
+                visitParenthesizedBlock(context.parenthesizedBlock()).underlyingBlock)
     }
 
     override fun visitVariableDefinition(
@@ -62,14 +57,14 @@ class ASTBuilder : FunBaseVisitor<ASTNode>() {
         return WhileCycle(
                 getStartPosition(context),
                 visitExpression(context.expression()),
-                visitBracedBlock(context.bracedBlock()))
+                visitParenthesizedBlock(context.parenthesizedBlock()))
     }
 
     override fun visitIfClause(context: FunParser.IfClauseContext): IfClause {
         val condition = visitExpression(context.expression())
-        val thenBlock = visitBracedBlock(context.bracedBlock(0))
-        val elseBlock = if (context.bracedBlock(1) != null) {
-            visitBracedBlock(context.bracedBlock(1))
+        val thenBlock = visitParenthesizedBlock(context.parenthesizedBlock(0))
+        val elseBlock = if (context.parenthesizedBlock(1) != null) {
+            visitParenthesizedBlock(context.parenthesizedBlock(1))
         } else {
             null
         }
@@ -109,27 +104,19 @@ class ASTBuilder : FunBaseVisitor<ASTNode>() {
         return PrintlnCall(getStartPosition(context), arguments)
     }
 
-    override fun visitExpression(context: FunParser.ExpressionContext): Expression {
-        return expressionBuilder.visitExpression(context)
-    }
+    override fun visitExpression(context: FunParser.ExpressionContext): Expression =
+            ExpressionBuilder.visitExpression(context)
 }
 
-internal class ExpressionBuilder : FunBaseVisitor<Expression>() {
-    override fun visitExpression(context: FunParser.ExpressionContext): Expression {
-        return visitChildren(context)
-    }
+object ExpressionBuilder : FunBaseVisitor<Expression>() {
+    override fun visitParenthesizedExpression(context: FunParser.ParenthesizedExpressionContext): ParenthesizedExpression =
+            ParenthesizedExpression(getStartPosition(context), visitExpression(context.expression()))
 
-    override fun visitBracedExpression(context: FunParser.BracedExpressionContext): BracedExpression {
-        return BracedExpression(getStartPosition(context), visitExpression(context.expression()))
-    }
+    override fun visitLiteral(context: FunParser.LiteralContext): Literal =
+            Number(getStartPosition(context), context.number().text.toInt())
 
-    override fun visitLiteral(context: FunParser.LiteralContext): Literal {
-        return Number(getStartPosition(context), context.number().text.toInt())
-    }
-
-    override fun visitIdentifier(context: FunParser.IdentifierContext): Identifier {
-        return Identifier(getStartPosition(context), context.text)
-    }
+    override fun visitIdentifier(context: FunParser.IdentifierContext): Identifier =
+            Identifier(getStartPosition(context), context.text)
 
     override fun visitFunctionCall(context: FunParser.FunctionCallContext): FunctionCall {
         val name = context.identifier().text
@@ -141,35 +128,37 @@ internal class ExpressionBuilder : FunBaseVisitor<Expression>() {
         return FunctionCall(getStartPosition(context), name, arguments)
     }
 
-    override fun visitOp14Expr(context: FunParser.Op14ExprContext): BinaryExpression {
+    override fun visitLorExpr(context: FunParser.LorExprContext): BinaryExpression {
         val left = visit(context.left)
         val right = visit(context.right)
         val op = context.op
-        return when (op.type) {
-            FunParser.LOR -> BinaryExpression(
-                    getStartPosition(context),
-                    left,
-                    Pair({ l: Int, r: Int -> (l != 0 || r != 0).int }, "||"),
-                    right)
-            else -> throw UnknownOperatorException(op)
+        if (op.type != FunParser.LOR) {
+            throw UnknownOperatorException(op)
         }
+        return BinaryExpression(
+                getStartPosition(context),
+                left,
+                Pair({ l: Int, r: Int -> (l != 0 || r != 0).int }, "||"),
+                right
+        )
     }
 
-    override fun visitOp13Expr(context: FunParser.Op13ExprContext): BinaryExpression {
+    override fun visitLandExpr(context: FunParser.LandExprContext): BinaryExpression {
         val left = visit(context.left)
         val right = visit(context.right)
         val op = context.op
-        return when (op.type) {
-            FunParser.LAND -> BinaryExpression(
-                    getStartPosition(context),
-                    left,
-                    Pair({ l: Int, r: Int -> (l != 0 && r != 0).int }, "&&"),
-                    right)
-            else -> throw UnknownOperatorException(op)
+        if (op.type != FunParser.LAND) {
+            throw UnknownOperatorException(op)
         }
+        return BinaryExpression(
+                getStartPosition(context),
+                left,
+                Pair({ l: Int, r: Int -> (l != 0 && r != 0).int }, "&&"),
+                right
+        )
     }
 
-    override fun visitOp9Expr(context: FunParser.Op9ExprContext): BinaryExpression {
+    override fun visitEqExpr(context: FunParser.EqExprContext): BinaryExpression {
         val left = visit(context.left)
         val right = visit(context.right)
         val op: (Int,Int) -> Int = when (context.op.type) {
@@ -180,7 +169,7 @@ internal class ExpressionBuilder : FunBaseVisitor<Expression>() {
         return BinaryExpression(getStartPosition(context), left, Pair(op, context.op.text), right)
     }
 
-    override fun visitOp8Expr(context: FunParser.Op8ExprContext): BinaryExpression {
+    override fun visitIneqExpr(context: FunParser.IneqExprContext): BinaryExpression {
         val left = visit(context.left)
         val right = visit(context.right)
         val op: (Int,Int) -> Int = when (context.op.type) {
@@ -193,7 +182,7 @@ internal class ExpressionBuilder : FunBaseVisitor<Expression>() {
         return BinaryExpression(getStartPosition(context), left, Pair(op, context.op.text), right)
     }
 
-    override fun visitOp6Expr(context: FunParser.Op6ExprContext): BinaryExpression {
+    override fun visitAddExpr(context: FunParser.AddExprContext): BinaryExpression {
         val left = visit(context.left)
         val right = visit(context.right)
         val op: (Int,Int) -> Int = when (context.op.type) {
@@ -204,7 +193,7 @@ internal class ExpressionBuilder : FunBaseVisitor<Expression>() {
         return BinaryExpression(getStartPosition(context), left, Pair(op, context.op.text), right)
     }
 
-    override fun visitOp5Expr(context: FunParser.Op5ExprContext): BinaryExpression {
+    override fun visitMulExpr(context: FunParser.MulExprContext): BinaryExpression {
         fun checkDivisor(divisor: Int) {
             if (divisor == 0) {
                 throw ZeroDivisionException(

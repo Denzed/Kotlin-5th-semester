@@ -9,35 +9,35 @@ block
         )*
     ;
 
-bracedBlock
+parenthesizedBlock
     :   CURLY_LPAREN block CURLY_RPAREN
     ;
 
 CURLY_RPAREN
-    : '}'
+    :   '}'
     ;
 
 CURLY_LPAREN
-    : '{'
+    :   '{'
     ;
 
-    statement
-        :   functionDefinition
-        |   variableDefinition
-        |   printlnCall
-        |   expression
-        |   whileCycle
-        |   ifClause
-        |   variableAssignment
-        |   returnStatement
+statement
+    :   functionDefinition
+    |   variableDefinition
+    |   printlnCall
+    |   expression
+    |   whileCycle
+    |   ifClause
+    |   variableAssignment
+    |   returnStatement
     ;
 
 functionDefinition
-    :   FUN_DEF identifier LPAREN parameterNames RPAREN bracedBlock
+    :   FUN_DEF identifier LPAREN parameterNames RPAREN parenthesizedBlock
     ;
 
 FUN_DEF
-    : 'fun'
+    :   'fun'
     ;
 
 variableDefinition
@@ -47,11 +47,11 @@ variableDefinition
     ;
 
 ASSIGN
-    : '='
+    :   '='
     ;
 
 VAR_DEF
-    : 'var'
+    :   'var'
     ;
 
 printlnCall
@@ -59,7 +59,7 @@ printlnCall
     ;
 
 PRINTLN_KW
-    : 'println'
+    :   'println'
     ;
 
 parameterNames
@@ -70,29 +70,29 @@ parameterNames
     ;
 
 COMMA
-    : ','
+    :   ','
     ;
 
 whileCycle
-    :   WHILE_KW LPAREN expression RPAREN bracedBlock
+    :   WHILE_KW LPAREN expression RPAREN parenthesizedBlock
     ;
 
 WHILE_KW
-    : 'while'
+    :   'while'
     ;
 
 ifClause
-    :   IF_KW LPAREN expression RPAREN bracedBlock
-        ( ELSE_KW bracedBlock
+    :   IF_KW LPAREN expression RPAREN parenthesizedBlock
+        ( ELSE_KW parenthesizedBlock
         )?
     ;
 
 IF_KW
-    : 'if'
+    :   'if'
     ;
 
 ELSE_KW
-    : 'else'
+    :   'else'
     ;
 
 variableAssignment
@@ -104,7 +104,7 @@ returnStatement
     ;
 
 RETURN_KW
-    : 'return'
+    :   'return'
     ;
 
 expression
@@ -116,10 +116,10 @@ atomicExpression
     :   functionCall
     |   identifier
     |   literal
-    |   bracedExpression
+    |   parenthesizedExpression
     ;
 
-bracedExpression
+parenthesizedExpression
     :   LPAREN expression RPAREN
     ;
 
@@ -157,138 +157,138 @@ number
     ;
 
 binaryExpression
-    :   binaryExpressionOfPrecedence14
+    :   logicalOrExpression
     ;
 
-binaryExpressionOfPrecedence5
+multiplicativeExpression
     :   left = atomicExpression
         op = ( MUL | DIV | MOD )
-        right = binaryExpressionOfPrecedence5   #op5Expr
-    |   atomicExpression                        #atom5Expr
+        right = multiplicativeExpression   #mulExpr
+    |   atomicExpression                   #atomicExpr
     ;
 
 MOD
-    : '%'
+    :   '%'
     ;
 
 DIV
-    : '/'
+    :   '/'
     ;
 
 MUL
-    : '*'
+    :   '*'
     ;
 
-binaryExpressionOfPrecedence6
-    :   left = binaryExpressionOfPrecedence5
+additiveExpression
+    :   left = multiplicativeExpression
         op = ( ADD | SUB )
-        right = binaryExpressionOfPrecedence6   #op6Expr
-    |   binaryExpressionOfPrecedence5           #atom6Expr
+        right = additiveExpression   #addExpr
+    |   multiplicativeExpression     #addAtomicExpr
     ;
 
 SUB
-    : '-'
+    :   '-'
     ;
 
 ADD
-    : '+'
+    :   '+'
     ;
 
-binaryExpressionOfPrecedence8
-    :   left = binaryExpressionOfPrecedence6
+inequalityExpression
+    :   left = additiveExpression
         op = ( LT | LE | GT | GE )
-        right = binaryExpressionOfPrecedence6   #op8Expr
-    |   binaryExpressionOfPrecedence6           #atom8Expr
+        right = additiveExpression   #ineqExpr
+    |   additiveExpression           #ineqAtomicExpr
     ;
 
 GE
-    : '>='
+    :   '>='
     ;
 
 GT
-    : '>'
+    :   '>'
     ;
 
 LE
-    : '<='
+    :   '<='
     ;
 
 LT
-    : '<'
+    :   '<'
     ;
 
-binaryExpressionOfPrecedence9
-    :   left = binaryExpressionOfPrecedence8
+equalityExpression
+    :   left = inequalityExpression
         op = ( EQ | NEQ )
-        right = binaryExpressionOfPrecedence8   #op9Expr
-    |   binaryExpressionOfPrecedence8           #atom9Expr
+        right = inequalityExpression   #eqExpr
+    |   inequalityExpression           #eqAtomicExpr
     ;
 
 NEQ
-    : '!='
+    :   '!='
     ;
 
 EQ
-    : '=='
+    :   '=='
     ;
 
-binaryExpressionOfPrecedence13
-    :   left = binaryExpressionOfPrecedence9
+logicalAndExpression
+    :   left = equalityExpression
         op = LAND
-        right = binaryExpressionOfPrecedence13  #op13Expr
-    |   binaryExpressionOfPrecedence9           #atom13Expr
+        right = logicalAndExpression #landExpr
+    |   equalityExpression           #landAtomicExpr
     ;
 
 LAND
-    : '&&'
+    :   '&&'
     ;
 
-binaryExpressionOfPrecedence14
-    :   left = binaryExpressionOfPrecedence13
+logicalOrExpression
+    :   left = logicalAndExpression
         op = LOR
-        right = binaryExpressionOfPrecedence14  #op14Expr
-    |   binaryExpressionOfPrecedence13          #atom14Expr
+        right = logicalOrExpression  #lorExpr
+    |   logicalAndExpression         #lorAtomicExpr
     ;
 
 LOR
-    : '||'
+    :   '||'
     ;
 
 fragment UNDERSCORE
-    : '_'
+    :   '_'
     ;
 
 fragment DIGIT
-    : '0'..'9'
+    :   '0'..'9'
     ;
 
 fragment NON_ZERO_DIGIT
-    : '1'..'9'
+    :   '1'..'9'
     ;
 
 fragment LETTER
-    : ('a'..'z')
-    | ('A'..'Z')
+    :   ('a'..'z')
+    |   ('A'..'Z')
     ;
 
 RPAREN
-    : ')'
+    :   ')'
     ;
 
 LPAREN
-    : '('
+    :   '('
     ;
 
 Number
-    : NON_ZERO_DIGIT
-            DIGIT*
-    | '0'
+    :   NON_ZERO_DIGIT
+        DIGIT*
+    |   '0'
     ;
 
 WS
-    : (' ' | '\t' | '\r'| '\n') -> skip
+    :   (' ' | '\t' | '\r'| '\n') -> skip
     ;
 
 LINE_COMMENT
-    : '//' ~[\r\n]* -> skip
+    :   '//' ~[\r\n]* -> skip
     ;
