@@ -1,9 +1,9 @@
 package ru.spbau.mit.interpreter.ast
 
-class ASTVisitor {
+class ASTInterpreter: ASTVisitor<Int?> {
     private val stack: MutableList<StackFrame> = mutableListOf(StackFrame())
 
-    private inner class StackFrame(
+    private class StackFrame(
             val variables: MutableMap<String,Int> = mutableMapOf(),
             val functions: MutableMap<String,FunctionDefinition> = mutableMapOf()
     )
@@ -15,70 +15,64 @@ class ASTVisitor {
 
     private fun removeStackFrame() = stack.removeAt(stack.lastIndex)
 
-    private fun findStackFrameForVariable(variable: String): StackFrame? {
-        return stack.lastOrNull { frame -> variable in frame.variables }
-    }
+    private fun findStackFrameForVariable(variable: String): StackFrame? =
+            stack.lastOrNull { frame -> variable in frame.variables }
 
     private fun findFunction(function: String): FunctionDefinition? {
-        return stack
-                .lastOrNull { frame -> function in frame.functions }
-                ?.functions
-                ?.get(function)
+        val stackFrame = stack.lastOrNull { frame -> function in frame.functions }
+        return stackFrame?.functions?.get(function)
     }
 
-    fun visit(astNode: ASTNode): Int? {
-        return astNode.accept(this)
-    }
+    override fun visit(astNode: ASTNode): Int? = astNode.accept(this)
 
-    private fun visitExpression(expression: Expression): Int {
-        return expression.accept(this)
-    }
+    private fun visitExpression(expression: Expression): Int = expression.accept(this)
 
-    private fun visitCondition(expression: Expression): Boolean {
-        return visitExpression(expression) != 0
-    }
+    private fun visitCondition(expression: Expression): Boolean =
+            visitExpression(expression) != 0
 
-    fun visitFile(file: File) {
+    override fun visitFile(file: File): Int? {
         file.block.accept(this)
-    }
-
-    fun visitBlock(block: Block): Int? {
-        block.statements.asSequence().forEach { statement ->
-            when (statement) {
-                is Identifier -> return@forEach
-                else -> return visit(statement) ?: return@forEach
-            }
-        }
         return null
     }
 
-    fun visitFunctionDefinition(functionDefinition: FunctionDefinition) {
-        when (functionDefinition.name) {
-            in stack.last().functions -> throw FunctionRedefinitionException(
-                    functionDefinition.position,
-                    functionDefinition.name)
-            else -> stack.last().functions[functionDefinition.name] = functionDefinition
-        }
+    override fun visitBlock(block: Block): Int? {
+        return block.statements
+                .asSequence()
+                .filter { it !is Identifier }
+                .map { visit(it) }
+                .firstOrNull { it != null }
     }
 
-    fun visitBracedBlock(bracedBlock: BracedBlock): Int? {
+    override fun visitFunctionDefinition(functionDefinition: FunctionDefinition): Int? {
+        if (functionDefinition.name in stack.last().functions) {
+            throw FunctionRedefinitionException(
+                    functionDefinition.position,
+                    functionDefinition.name
+            )
+        }
+        stack.last().functions[functionDefinition.name] = functionDefinition
+        return null
+    }
+
+    override fun visitParenthesizedBlock(parenthesizedBlock: ParenthesizedBlock): Int? {
         addStackFrame()
-        val result = bracedBlock.underlyingBlock.accept(this)
+        val result = parenthesizedBlock.underlyingBlock.accept(this)
         removeStackFrame()
         return result
     }
 
-    fun visitVariableDefinition(variableDefinition: VariableDefinition) {
-        when (variableDefinition.name) {
-            in stack.last().variables -> throw VariableRedefinitionException(
+    override fun visitVariableDefinition(variableDefinition: VariableDefinition): Int? {
+        if (variableDefinition.name in stack.last().variables) {
+            throw VariableRedefinitionException(
                     variableDefinition.position,
                     variableDefinition.name)
-            else -> stack.last().variables[variableDefinition.name] =
-                    variableDefinition.value.accept(this)
         }
+        stack.last().variables[variableDefinition.name] =
+                variableDefinition.value.accept(this)
+        return null
     }
 
-    fun visitWhileCycle(whileCycle: WhileCycle): Int? {
+    override fun visitWhileCycle(whileCycle: WhileCycle): Int? {
         while (visitCondition(whileCycle.condition)) {
             val blockResult = whileCycle.body.accept(this)
             if (blockResult != null) {
@@ -88,79 +82,70 @@ class ASTVisitor {
         return null
     }
 
-    fun visitIfClause(ifClause: IfClause): Int? {
-        return when {
-            visitCondition(ifClause.condition) -> visit(ifClause.thenBody)
-            ifClause.elseBody != null -> visit(ifClause.elseBody)
-            else -> null
-        }
-    }
+    override fun visitIfClause(ifClause: IfClause): Int? =
+            if (visitCondition(ifClause.condition))
+                visit(ifClause.thenBody)
+            else
+                ifClause.elseBody?.let(this::visit)
 
-    fun visitVariableAssignment(variableAssignment: VariableAssignment) {
+    override fun visitVariableAssignment(variableAssignment: VariableAssignment): Int? {
         val stackFrame = findStackFrameForVariable(variableAssignment.name)
-        when (stackFrame) {
-            null -> throw VariableUndefinedException(
+                ?: throw VariableUndefinedException(
                     variableAssignment.position,
-                    variableAssignment.name)
-            else -> stackFrame.variables[variableAssignment.name] =
-                    visitExpression(variableAssignment.newValue)
-        }
+                    variableAssignment.name
+                )
+        stackFrame.variables[variableAssignment.name] =
+                visitExpression(variableAssignment.newValue)
+        return null
     }
 
-    fun visitPrintlnCall(printlnCall: PrintlnCall) {
+    override fun visitPrintlnCall(printlnCall: PrintlnCall): Int? {
         println(printlnCall.parameters
                 .map(this::visitExpression)
                 .joinToString(" "))
+        return null
     }
 
-    fun visitReturnStatement(returnStatement: ReturnStatement): Int {
-        when (stackDepth()) {
-            0 -> throw InvalidReturnStatementException(returnStatement.position)
-            else -> return visitExpression(returnStatement.expression)
+    override fun visitReturnStatement(returnStatement: ReturnStatement): Int {
+        if (stackDepth() == 0) {
+            throw InvalidReturnStatementException(returnStatement.position)
         }
+        return visitExpression(returnStatement.expression)
     }
 
-    fun visitFunctionCall(functionCall: FunctionCall): Int {
+    override fun visitFunctionCall(functionCall: FunctionCall): Int {
         val function = findFunction(functionCall.name)
-        when (function) {
-            null -> throw FunctionUndefinedException(
+                ?: throw FunctionUndefinedException(
                     functionCall.position,
-                    functionCall.name)
-            else -> {
-                addStackFrame(StackFrame(
-                        function.parameterNames
-                                .zip(functionCall.parameters.map(this::visitExpression))
-                                .toMap()
-                                .toMutableMap()))
-                val callResult = visit(function.body)
-                removeStackFrame()
-                return callResult ?: 0
-            }
-        }
+                    functionCall.name
+                )
+        addStackFrame(StackFrame(
+                function.parameterNames
+                        .zip(functionCall.parameters.map(this::visitExpression))
+                        .toMap()
+                        .toMutableMap()
+                )
+        )
+        val callResult = visit(function.body)
+        removeStackFrame()
+        return callResult ?: 0
     }
 
-    fun visitIdentifier(identifier: Identifier): Int {
-        val stackFrame = findStackFrameForVariable(identifier.text)
-        when (stackFrame) {
-            null -> throw VariableUndefinedException(
-                    identifier.position,
-                    identifier.text)
-            else -> return stackFrame.variables[identifier.text]!!
-        }
-    }
+    override fun visitIdentifier(identifier: Identifier): Int =
+            findStackFrameForVariable(identifier.text)?.variables?.get(identifier.text)
+                ?: throw VariableUndefinedException(
+                        identifier.position,
+                        identifier.text
+                )
 
-    fun visitNumber(number: Number): Int {
-        return number.value
-    }
+    override fun visitNumber(number: Number): Int = number.value
 
-    fun visitBracedExpression(bracedExpression: BracedExpression): Int {
-        return visitExpression(bracedExpression.underlyingExpression)
-    }
+    override fun visitParenthesizedExpression(parenthesizedExpression: ParenthesizedExpression): Int =
+            visitExpression(parenthesizedExpression.underlyingExpression)
 
-    fun visitBinaryExpression(binaryExpression: BinaryExpression): Int {
-        return binaryExpression.operator.first(
+    override fun visitBinaryExpression(binaryExpression: BinaryExpression): Int =
+        binaryExpression.operator.first(
                 visitExpression(binaryExpression.left),
                 visitExpression(binaryExpression.right)
         )
-    }
 }
