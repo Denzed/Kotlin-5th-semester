@@ -20,81 +20,95 @@ class TestASTBuilder {
 
     @Before
     fun setUpStreams() {
-        System.setErr(PrintStream(errContent))
+        System.setErr( PrintStream( errContent ) )
     }
 
     @After
     fun cleanUpStreams() {
-        assertEquals(0, errContent.size(), errContent.toString())
+        assertEquals( 0, errContent.size(), errContent.toString() )
         errContent.reset()
-        System.setErr(null)
+        System.setErr( null )
     }
 
-    private fun parseToAST(code: String): ASTNode {
-        val lexer = FunLexer(CharStreams.fromString(code))
-        val parser = FunParser(BufferedTokenStream(lexer))
-        return ASTBuilder.visit(parser.block())
+    private fun parseToAST( code: String ): ASTNode {
+        val lexer = FunLexer( CharStreams.fromString( code ) )
+        val parser = FunParser( BufferedTokenStream( lexer ) )
+        return ASTBuilder.visit( parser.block() )
     }
 
     @Test
     fun testLiteral() {
         val code = "179"
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(Number(blankPosition, 179)))
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf( Number( blankPosition, 179 ) )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testIdentifier() {
         val code = "_s179"
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(Identifier(blankPosition, "_s179")))
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf( Identifier( blankPosition, "_s179" ) )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testVariableDefinition() {
         val code = "var _s179 = 179"
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(VariableDefinition(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        VariableDefinition(
                                 blankPosition,
                                 "_s179",
-                                Number(blankPosition, 179))))
+                                Number( blankPosition, 179 )
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testVariableAssignment() {
         val code = "_s179 = 179"
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(VariableAssignment(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        VariableAssignment(
                                 blankPosition,
                                 "_s179",
-                                Number(blankPosition, 179))))
+                                Number( blankPosition, 179 )
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testBinaryOperation() {
         val code = "1 + 178"
 
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(BinaryExpression(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        BinaryExpression(
                                 blankPosition,
-                                Number(blankPosition, 1),
-                                Pair({ _, _ -> -1 }, "+"),
-                                Number(blankPosition, 178))))
+                                Number( blankPosition, 1 ),
+                                BinaryExpression.operators[FunParser.ADD]!!,
+                                Number( blankPosition, 178 )
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
@@ -103,114 +117,168 @@ class TestASTBuilder {
                 "   return a + b\n" +
                 "}"
 
-        val expectedFunctionBody =
-                Block(blankPosition,
-                        mutableListOf(ReturnStatement(blankPosition,
+        val expectedFunctionBody = Block(
+                blankPosition,
+                mutableListOf(
+                        ReturnStatement(
+                                blankPosition,
                                 BinaryExpression(
                                         blankPosition,
-                                        Identifier(blankPosition, "a"),
-                                        Pair({ _, _ -> -1 }, "+"),
-                                        Identifier(blankPosition, "b")))))
+                                        Identifier( blankPosition, "a" ),
+                                        BinaryExpression.operators[FunParser.ADD]!!,
+                                        Identifier( blankPosition, "b")
+                                )
+                        )
+                )
+        )
 
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(FunctionDefinition(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        FunctionDefinition(
                                 blankPosition,
                                 "sum",
-                                mutableListOf("a", "b"),
-                                expectedFunctionBody)))
+                                mutableListOf( "a", "b" ),
+                                expectedFunctionBody
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testFunctionCall() {
         val code = "sum(178, 1)"
 
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(FunctionCall(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        FunctionCall(
                                 blankPosition,
                                 "sum",
                                 mutableListOf(
-                                        Number(blankPosition, 178),
-                                        Number(blankPosition, 1)
-                                ))))
+                                        Number( blankPosition, 178 ),
+                                        Number( blankPosition, 1 )
+                                )
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testWhileCycle() {
         val code = "while (1) {}"
 
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(WhileCycle(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        WhileCycle(
                                 blankPosition,
-                                Number(blankPosition, 1),
-                                ParenthesizedBlock(blankPosition,
-                                        Block(blankPosition, mutableListOf())))))
+                                Number( blankPosition, 1 ),
+                                ParenthesizedBlock(
+                                        blankPosition,
+                                        Block(
+                                                blankPosition,
+                                                mutableListOf()
+                                        )
+                                )
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testIfClause() {
         val code = "if (1) {}"
 
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(IfClause(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        IfClause(
                                 blankPosition,
-                                Number(blankPosition, 1),
-                                ParenthesizedBlock(blankPosition,
-                                        Block(blankPosition, mutableListOf())),
-                                null)))
+                                Number( blankPosition, 1 ),
+                                ParenthesizedBlock(
+                                        blankPosition,
+                                        Block(
+                                                blankPosition,
+                                                mutableListOf()
+                                        )
+                                ),
+                                null
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testIfElseClause() {
         val code = "if (1) {} else {}"
 
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(IfClause(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        IfClause(
                                 blankPosition,
-                                Number(blankPosition, 1),
-                                ParenthesizedBlock(blankPosition,
-                                        Block(blankPosition, mutableListOf())),
-                                ParenthesizedBlock(blankPosition,
-                                        Block(blankPosition, mutableListOf())))))
+                                Number( blankPosition, 1 ),
+                                ParenthesizedBlock(
+                                        blankPosition,
+                                        Block(
+                                                blankPosition,
+                                                mutableListOf()
+                                        )
+                                ),
+                                ParenthesizedBlock(
+                                        blankPosition,
+                                        Block(
+                                                blankPosition,
+                                                mutableListOf()
+                                        )
+                                )
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testReturnStatement() {
         val code = "return 179"
 
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(ReturnStatement(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        ReturnStatement(
                                 blankPosition,
-                                Number(blankPosition, 179))))
+                                Number( blankPosition, 179 )
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 
     @Test
     fun testParenthesizedExpression() {
         val code = "(1)"
 
-        val expectedTree =
-                Block(blankPosition,
-                        mutableListOf(ParenthesizedExpression(
+        val expectedTree = Block(
+                blankPosition,
+                mutableListOf(
+                        ParenthesizedExpression(
                                 blankPosition,
-                                Number(blankPosition, 1))))
+                                Number( blankPosition, 1 )
+                        )
+                )
+        )
 
-        assertEquals(expectedTree, parseToAST(code))
+        assertEquals( expectedTree, parseToAST( code ) )
     }
 }

@@ -14,28 +14,28 @@ class TestMain {
 
     @Before
     fun setUpStreams() {
-        System.setOut(PrintStream(outContent))
-        System.setErr(PrintStream(errContent))
+        System.setOut( PrintStream( outContent ) )
+        System.setErr( PrintStream( errContent ) )
     }
 
     @After
     fun cleanUpStreams() {
-        assertEquals(0, errContent.size(), errContent.toString())
+        assertEquals( 0, errContent.size(), errContent.toString() )
         outContent.reset()
         errContent.reset()
-        System.setErr(null)
-        System.setOut(null)
+        System.setErr( null )
+        System.setOut( null )
     }
 
-    private fun assertPrints(text: String) {
-        assert(outContent.toString() == text)
+    private fun assertPrints( text: String ) {
+        assert( outContent.toString() == text )
     }
 
     @Test
     fun testSimple() {
         val tempFile = createTempFile()
-        tempFile.writeText("println(179)")
-        main(Array(2, { tempFile.absolutePath }))
-        assertPrints("179\n")
+        tempFile.writeText( "println(179)" )
+        main( Array( 2, { tempFile.absolutePath } ) )
+        assertPrints( "179\n" )
     }
 }

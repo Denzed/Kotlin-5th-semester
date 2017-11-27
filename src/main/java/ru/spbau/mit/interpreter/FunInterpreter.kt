@@ -7,18 +7,18 @@ import ru.spbau.mit.interpreter.ast.ASTVisitor
 import ru.spbau.mit.parser.FunLexer
 import ru.spbau.mit.parser.FunParser
 
-fun interpretFile(fileName: String) {
-    val lexer = FunLexer(CharStreams.fromFileName(fileName))
-    val parser = FunParser(BufferedTokenStream(lexer))
-    val ast = ASTBuilder.visitFile(parser.file())
+fun interpretFile( fileName: String ) {
+    val lexer = FunLexer( CharStreams.fromFileName( fileName ) )
+    val parser = FunParser( BufferedTokenStream( lexer ) )
+    val ast = ASTBuilder.visitFile( parser.file() )
 
-    ASTVisitor().visit(ast)
+    ASTVisitor().visit( ast )
 }
 
-fun interpretCode(code: String): Int? {
-    val lexer = FunLexer(CharStreams.fromString(code))
-    val parser = FunParser(BufferedTokenStream(lexer))
-    val ast = ASTBuilder.visit(parser.block())
+fun interpretCode( code: String ): Int? {
+    val lexer = FunLexer( CharStreams.fromString( code ) )
+    val parser = FunParser( BufferedTokenStream( lexer ) )
+    val ast = ASTBuilder.visit( parser.block() )
 
-    return ASTVisitor().visit(ast)
+    return ASTVisitor().visit( ast )
 }
