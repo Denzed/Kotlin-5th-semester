@@ -14,31 +14,31 @@ class TestCodeInterpreter {
 
     @Before
     fun setUpStreams() {
-        System.setOut( PrintStream( outContent ) )
-        System.setErr( PrintStream( errContent ) )
+        System.setOut(PrintStream(outContent))
+        System.setErr(PrintStream(errContent))
     }
 
     @After
     fun cleanUpStreams() {
-        assertEquals( 0, errContent.size(), errContent.toString() )
+        assertEquals(0, errContent.size(), errContent.toString())
         outContent.reset()
         errContent.reset()
-        System.setErr( null )
-        System.setOut( null )
+        System.setErr(null)
+        System.setOut(null)
     }
 
-    private fun assertPrints( text: String ) {
-        assert( outContent.toString() == text )
+    private fun assertPrints(text: String) {
+        assert(outContent.toString() == text)
     }
 
     @Test
     fun testLiteral() {
         val code = "println(179)"
-        interpretCode( code )
-        assertPrints( "179\n" )
+        interpretCode(code)
+        assertPrints("179\n")
     }
 
-    @Test( expected = VariableUndefinedException::class )
+    @Test(expected = VariableUndefinedException::class)
     fun testUndefinedIdentifier() {
         interpretCode("println(_s179)")
     }
@@ -49,29 +49,29 @@ class TestCodeInterpreter {
                 "var _s179 = 179\n" +
                 "println(_s179)"
         )
-        assertPrints( "179\n" )
+        assertPrints("179\n")
     }
 
     @Test
     fun testVariableDefinition() {
         val code = "var _s179 = 179"
-        interpretCode( code )
-        assertPrints( "" )
+        interpretCode(code)
+        assertPrints("")
     }
 
     @Test
     fun testVariableAssignment() {
         val code = "var _s179 = 0\n" +
                 "_s179 = 179"
-        interpretCode( code )
-        assertPrints( "" )
+        interpretCode(code)
+        assertPrints("")
     }
 
     @Test
     fun testBinaryOperation() {
         val code = "println(1 + 178)"
-        interpretCode( code )
-        assertPrints( "179\n" )
+        interpretCode(code)
+        assertPrints("179\n")
     }
 
     @Test
@@ -79,8 +79,8 @@ class TestCodeInterpreter {
         val code = "fun sum(a, b) {\n" +
                 "   return a + b\n" +
                 "}"
-        interpretCode( code )
-        assertPrints( "" )
+        interpretCode(code)
+        assertPrints("")
     }
 
     @Test
@@ -89,15 +89,15 @@ class TestCodeInterpreter {
                 "   return a + b\n" +
                 "}\n" +
                 "println(sum(178, 1))"
-        interpretCode( code )
-        assertPrints( "179\n" )
+        interpretCode(code)
+        assertPrints("179\n")
     }
 
     @Test
     fun testEmptyPrintlnCall() {
         val code = "println()"
-        interpretCode( code )
-        assertPrints( "\n" )
+        interpretCode(code)
+        assertPrints("\n")
     }
 
     @Test
@@ -107,7 +107,7 @@ class TestCodeInterpreter {
                 "println(i)" +
                 "i = i - 1" +
                 "}"
-        interpretCode( code )
+        interpretCode(code)
         assertPrints(
                 "1\n" +
                 "0\n"
@@ -119,8 +119,8 @@ class TestCodeInterpreter {
         val code = "if (1) {\n" +
                 "println(1)\n" +
                 "}"
-        interpretCode( code )
-        assertPrints( "1\n" )
+        interpretCode(code)
+        assertPrints("1\n")
     }
 
     @Test
@@ -128,22 +128,22 @@ class TestCodeInterpreter {
         val code = "if (0) {\n" +
                 "println(1)\n" +
                 "}"
-        interpretCode( code )
-        assertPrints( "" )
+        interpretCode(code)
+        assertPrints("")
     }
 
-    @Test( expected = InvalidReturnStatementException::class )
+    @Test(expected = InvalidReturnStatementException::class)
     fun testReturnStatement() {
         val code = "return 179"
-        interpretCode( code )
-        assertPrints( "" )
+        interpretCode(code)
+        assertPrints("")
     }
 
     @Test
     fun testParenthesizedExpression() {
         val code = "println((1))"
-        interpretCode( code )
-        assertPrints( "1\n" )
+        interpretCode(code)
+        assertPrints("1\n")
     }
 
     @Test
@@ -157,7 +157,7 @@ class TestCodeInterpreter {
                 "    println(0)\n" +
                 "}"
         )
-        assertPrints( "0\n" )
+        assertPrints("0\n")
     }
 
     @Test
@@ -198,6 +198,6 @@ class TestCodeInterpreter {
                 "\n" +
                 "println(foo(41)) // prints 42\n"
         )
-        assertPrints( "42\n" )
+        assertPrints("42\n")
     }
 }

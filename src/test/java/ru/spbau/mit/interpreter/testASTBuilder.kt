@@ -20,20 +20,20 @@ class TestASTBuilder {
 
     @Before
     fun setUpStreams() {
-        System.setErr( PrintStream( errContent ) )
+        System.setErr(PrintStream(errContent))
     }
 
     @After
     fun cleanUpStreams() {
-        assertEquals( 0, errContent.size(), errContent.toString() )
+        assertEquals(0, errContent.size(), errContent.toString())
         errContent.reset()
-        System.setErr( null )
+        System.setErr(null)
     }
 
-    private fun parseToAST( code: String ): ASTNode {
-        val lexer = FunLexer( CharStreams.fromString( code ) )
-        val parser = FunParser( BufferedTokenStream( lexer ) )
-        return ASTBuilder.visit( parser.block() )
+    private fun parseToAST(code: String): ASTNode {
+        val lexer = FunLexer(CharStreams.fromString(code))
+        val parser = FunParser(BufferedTokenStream(lexer))
+        return ASTBuilder.visit(parser.block())
     }
 
     @Test
@@ -41,10 +41,10 @@ class TestASTBuilder {
         val code = "179"
         val expectedTree = Block(
                 blankPosition,
-                mutableListOf( Number( blankPosition, 179 ) )
+                mutableListOf(Number(blankPosition, 179))
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -52,10 +52,10 @@ class TestASTBuilder {
         val code = "_s179"
         val expectedTree = Block(
                 blankPosition,
-                mutableListOf( Identifier( blankPosition, "_s179" ) )
+                mutableListOf(Identifier(blankPosition, "_s179"))
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -67,12 +67,12 @@ class TestASTBuilder {
                         VariableDefinition(
                                 blankPosition,
                                 "_s179",
-                                Number( blankPosition, 179 )
+                                Number(blankPosition, 179)
                         )
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -84,12 +84,12 @@ class TestASTBuilder {
                         VariableAssignment(
                                 blankPosition,
                                 "_s179",
-                                Number( blankPosition, 179 )
+                                Number(blankPosition, 179)
                         )
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -101,14 +101,14 @@ class TestASTBuilder {
                 mutableListOf(
                         BinaryExpression(
                                 blankPosition,
-                                Number( blankPosition, 1 ),
+                                Number(blankPosition, 1),
                                 BinaryExpression.operators[FunParser.ADD]!!,
-                                Number( blankPosition, 178 )
+                                Number(blankPosition, 178)
                         )
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -124,7 +124,7 @@ class TestASTBuilder {
                                 blankPosition,
                                 BinaryExpression(
                                         blankPosition,
-                                        Identifier( blankPosition, "a" ),
+                                        Identifier(blankPosition, "a"),
                                         BinaryExpression.operators[FunParser.ADD]!!,
                                         Identifier( blankPosition, "b")
                                 )
@@ -138,13 +138,13 @@ class TestASTBuilder {
                         FunctionDefinition(
                                 blankPosition,
                                 "sum",
-                                mutableListOf( "a", "b" ),
+                                mutableListOf("a", "b"),
                                 expectedFunctionBody
                         )
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -158,14 +158,14 @@ class TestASTBuilder {
                                 blankPosition,
                                 "sum",
                                 mutableListOf(
-                                        Number( blankPosition, 178 ),
-                                        Number( blankPosition, 1 )
+                                        Number(blankPosition, 178),
+                                        Number(blankPosition, 1)
                                 )
                         )
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -177,7 +177,7 @@ class TestASTBuilder {
                 mutableListOf(
                         WhileCycle(
                                 blankPosition,
-                                Number( blankPosition, 1 ),
+                                Number(blankPosition, 1),
                                 ParenthesizedBlock(
                                         blankPosition,
                                         Block(
@@ -189,7 +189,7 @@ class TestASTBuilder {
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -201,7 +201,7 @@ class TestASTBuilder {
                 mutableListOf(
                         IfClause(
                                 blankPosition,
-                                Number( blankPosition, 1 ),
+                                Number(blankPosition, 1),
                                 ParenthesizedBlock(
                                         blankPosition,
                                         Block(
@@ -214,7 +214,7 @@ class TestASTBuilder {
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -226,7 +226,7 @@ class TestASTBuilder {
                 mutableListOf(
                         IfClause(
                                 blankPosition,
-                                Number( blankPosition, 1 ),
+                                Number(blankPosition, 1),
                                 ParenthesizedBlock(
                                         blankPosition,
                                         Block(
@@ -245,7 +245,7 @@ class TestASTBuilder {
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -257,12 +257,12 @@ class TestASTBuilder {
                 mutableListOf(
                         ReturnStatement(
                                 blankPosition,
-                                Number( blankPosition, 179 )
+                                Number(blankPosition, 179)
                         )
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 
     @Test
@@ -274,11 +274,11 @@ class TestASTBuilder {
                 mutableListOf(
                         ParenthesizedExpression(
                                 blankPosition,
-                                Number( blankPosition, 1 )
+                                Number(blankPosition, 1)
                         )
                 )
         )
 
-        assertEquals( expectedTree, parseToAST( code ) )
+        assertEquals(expectedTree, parseToAST(code))
     }
 }
