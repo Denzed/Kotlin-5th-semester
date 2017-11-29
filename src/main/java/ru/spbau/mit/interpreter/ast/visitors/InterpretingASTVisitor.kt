@@ -148,7 +148,7 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
     ): Int = visitExpression(parenthesizedExpression.underlyingExpression)
 
     override fun visitBinaryExpression(binaryExpression: BinaryExpression): Int =
-            binaryExpression.operator.operation(
+            binaryExpression.operator(
                     visitExpression(binaryExpression.left),
                     visitExpression(binaryExpression.right)
             )

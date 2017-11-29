@@ -64,23 +64,60 @@ data class BinaryExpression(
     companion object {
         private val Boolean.int get() = if (this) 1 else 0
 
-        enum class Operator(
-                val operation: (Int,Int)->Int,
-                val representation: String
-        ) {
-            ADD     (Int::plus,                           "+" ),
-            SUB     (Int::minus,                           "-"),
-            MUL     (Int::times,                          "*" ),
-            DIV     (Int::div,                            "/" ),
-            MOD     (Int::rem,                            "%" ),
-            EQ      ( { l, r -> (l == r).int },           "=="),
-            NEQ     ( { l, r -> (l != r).int },           "!="),
-            LE      ( { l, r -> (l <= r).int },           "<="),
-            LT      ( { l, r -> (l < r).int },            "<" ),
-            GE      ( { l, r -> (l >= r).int },           ">="),
-            GT      ( { l, r -> (l > r).int },            ">" ),
-            LAND    ( { l, r -> (l != 0 && r != 0).int }, "&&"),
-            LOR     ( { l, r -> (l != 0 || r != 0).int }, "||")
+        enum class Operator(val representation: String) {
+            ADD("+" ) {
+                override fun invoke(l: Int, r: Int): Int = l + r
+            },
+
+            SUB("-") {
+                override fun invoke(l: Int, r: Int): Int = l - r
+            },
+
+            MUL("*") {
+                override fun invoke(l: Int, r: Int): Int = l * r
+            },
+
+            DIV("/") {
+                override fun invoke(l: Int, r: Int): Int = l / r
+            },
+
+            MOD("%" ) {
+                override fun invoke(l: Int, r: Int): Int = l % r
+            },
+
+            EQ("==") {
+                override fun invoke(l: Int, r: Int): Int = (l == r).int
+            },
+
+            NEQ("!=") {
+                override fun invoke(l: Int, r: Int): Int = (l != r).int
+            },
+
+            LE("<=") {
+                override fun invoke(l: Int, r: Int): Int = (l <= r).int
+            },
+
+            LT("<") {
+                override fun invoke(l: Int, r: Int): Int = (l < r).int
+            },
+
+            GE(">=") {
+                override fun invoke(l: Int, r: Int): Int = (l >= r).int
+            },
+
+            GT(">") {
+                override fun invoke(l: Int, r: Int): Int = (l > r).int
+            },
+
+            LAND("&&") {
+                override fun invoke(l: Int, r: Int): Int = (l != 0 && r != 0).int
+            },
+
+            LOR("||") {
+                override fun invoke(l: Int, r: Int): Int = (l != 0 || r != 0).int
+            };
+
+            abstract operator fun invoke(l: Int, r: Int): Int
         }
 
         val operators = mapOf(
