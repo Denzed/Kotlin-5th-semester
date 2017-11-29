@@ -29,8 +29,8 @@ object ASTBuilder : FunBaseVisitor<ASTNode>() {
             )
 
     override fun visitStatement(context: FunParser.StatementContext): Statement =
-            visitChildren(context) as? Statement ?:
-                    throw UnknownStatementException(getStartPosition(context))
+            visitChildren(context) as? Statement
+                    ?: throw UnknownStatementException(getStartPosition(context))
 
     override fun visitFunctionDefinition(
             context: FunParser.FunctionDefinitionContext
@@ -143,7 +143,8 @@ object ExpressionBuilder : FunBaseVisitor<Expression>() {
     }
 
     private fun getOperator(op: Token): BinaryExpression.Companion.Operator =
-            BinaryExpression.operators[op.type] ?: throw UnknownOperatorException(op)
+            BinaryExpression.operators[op.type]
+                    ?: throw UnknownOperatorException(op)
 
     override fun visitLorExpr(
             context: FunParser.LorExprContext

@@ -1,5 +1,6 @@
-package ru.spbau.mit.interpreter.ast
+package ru.spbau.mit.interpreter.ast.visitors
 
+import ru.spbau.mit.interpreter.ast.*
 import ru.spbau.mit.interpreter.ast.nodes.*
 import ru.spbau.mit.interpreter.ast.nodes.Number
 
@@ -90,9 +91,9 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
     override fun visitVariableAssignment(variableAssignment: VariableAssignment): Int? {
         val stackFrame = findStackFrameForVariable(variableAssignment.name)
                 ?: throw VariableUndefinedException(
-                variableAssignment.position,
-                variableAssignment.name
-        )
+                        variableAssignment.position,
+                        variableAssignment.name
+                )
         stackFrame.variables[variableAssignment.name] =
                 visitExpression(variableAssignment.newValue)
         return null
@@ -119,7 +120,7 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
                 functionCall.position,
                 functionCall.name
         )
-        addStackFrame( StackFrame(
+        addStackFrame(StackFrame(
                 function.parameterNames
                         .zip(functionCall.parameters.map(this::visitExpression))
                         .toMap()
@@ -136,9 +137,9 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
                     ?.variables
                     ?.get(identifier.text)
                     ?: throw VariableUndefinedException(
-                    identifier.position,
-                    identifier.text
-            )
+                            identifier.position,
+                            identifier.text
+                    )
 
     override fun visitNumber(number: Number): Int = number.value
 

@@ -1,4 +1,4 @@
-package ru.spbau.mit.interpreter.ast
+package ru.spbau.mit.interpreter.ast.visitors
 
 import ru.spbau.mit.interpreter.ast.nodes.*
 import ru.spbau.mit.interpreter.ast.nodes.Number

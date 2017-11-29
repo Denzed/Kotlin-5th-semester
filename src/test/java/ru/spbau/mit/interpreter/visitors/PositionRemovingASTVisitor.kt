@@ -1,8 +1,8 @@
-package ru.spbau.mit.interpreter
+package ru.spbau.mit.interpreter.visitors
 
-import ru.spbau.mit.interpreter.ast.ASTVisitor
 import ru.spbau.mit.interpreter.ast.nodes.*
 import ru.spbau.mit.interpreter.ast.nodes.Number
+import ru.spbau.mit.interpreter.ast.visitors.ASTVisitor
 
 object PositionRemovingASTVisitor : ASTVisitor<ASTNode> {
     val blankPosition = Pair(-1, -1)
@@ -65,11 +65,12 @@ object PositionRemovingASTVisitor : ASTVisitor<ASTNode> {
                     printlnCall.parameters.map(this::visitExpression)
             )
 
-    override fun visitReturnStatement(returnStatement: ReturnStatement): ReturnStatement =
-            ReturnStatement(
-                    blankPosition,
-                    visitExpression(returnStatement.expression)
-            )
+    override fun visitReturnStatement(
+            returnStatement: ReturnStatement
+    ): ReturnStatement = ReturnStatement(
+            blankPosition,
+            visitExpression(returnStatement.expression)
+    )
 
     override fun visitExpression(expression: Expression): Expression =
             visit(expression) as Expression

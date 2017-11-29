@@ -4,10 +4,11 @@ import org.antlr.v4.runtime.CharStreams
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import ru.spbau.mit.interpreter.PositionRemovingASTVisitor.blankPosition
 import ru.spbau.mit.interpreter.ast.ASTBuilder
 import ru.spbau.mit.interpreter.ast.nodes.*
 import ru.spbau.mit.interpreter.ast.nodes.Number
+import ru.spbau.mit.interpreter.visitors.PositionRemovingASTVisitor
+import ru.spbau.mit.interpreter.visitors.PositionRemovingASTVisitor.blankPosition
 import ru.spbau.mit.parser.FunLexer
 import ru.spbau.mit.parser.FunParser
 import java.io.ByteArrayOutputStream

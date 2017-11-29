@@ -1,6 +1,6 @@
 package ru.spbau.mit.interpreter.ast.nodes
 
-import ru.spbau.mit.interpreter.ast.ASTVisitor
+import ru.spbau.mit.interpreter.ast.visitors.ASTVisitor
 
 abstract class Statement: ASTNode()
 

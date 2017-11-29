@@ -1,6 +1,6 @@
 package ru.spbau.mit.interpreter.ast.nodes
 
-import ru.spbau.mit.interpreter.ast.ASTVisitor
+import ru.spbau.mit.interpreter.ast.visitors.ASTVisitor
 import ru.spbau.mit.parser.FunParser
 
 abstract class Expression: Statement()
@@ -69,7 +69,7 @@ data class BinaryExpression(
                 val representation: String
         ) {
             ADD     (Int::plus,                           "+" ),
-            SUB     (Int::minus,                           "-" ),
+            SUB     (Int::minus,                           "-"),
             MUL     (Int::times,                          "*" ),
             DIV     (Int::div,                            "/" ),
             MOD     (Int::rem,                            "%" ),

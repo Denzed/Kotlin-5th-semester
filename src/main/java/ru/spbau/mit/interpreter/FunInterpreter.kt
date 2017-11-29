@@ -4,7 +4,7 @@ import org.antlr.v4.runtime.BufferedTokenStream
 import org.antlr.v4.runtime.CharStream
 import org.antlr.v4.runtime.CharStreams
 import ru.spbau.mit.interpreter.ast.ASTBuilder
-import ru.spbau.mit.interpreter.ast.InterpretingASTVisitor
+import ru.spbau.mit.interpreter.ast.visitors.InterpretingASTVisitor
 import ru.spbau.mit.parser.FunLexer
 import ru.spbau.mit.parser.FunParser
 
