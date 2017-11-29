@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.CharStreams
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import ru.spbau.mit.interpreter.PositionRemovingASTVisitor.blankPosition
 import ru.spbau.mit.interpreter.ast.ASTBuilder
 import ru.spbau.mit.interpreter.ast.nodes.*
 import ru.spbau.mit.interpreter.ast.nodes.Number
@@ -12,8 +13,6 @@ import ru.spbau.mit.parser.FunParser
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.assertEquals
-
-private val blankPosition = Pair(-1, -1)
 
 class TestASTBuilder {
     private val errContent = ByteArrayOutputStream()
@@ -33,7 +32,8 @@ class TestASTBuilder {
     private fun parseToAST(code: String): ASTNode {
         val lexer = FunLexer(CharStreams.fromString(code))
         val parser = FunParser(BufferedTokenStream(lexer))
-        return ASTBuilder.visit(parser.block())
+        val ast = ASTBuilder.visit(parser.block())
+        return PositionRemovingASTVisitor.visit(ast)
     }
 
     @Test

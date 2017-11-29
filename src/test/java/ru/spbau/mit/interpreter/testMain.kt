@@ -35,7 +35,7 @@ class TestMain {
     fun testSimple() {
         val tempFile = createTempFile()
         tempFile.writeText("println(179)")
-        main(Array(2, { tempFile.absolutePath }))
+        main(arrayOf(tempFile.absolutePath))
         assertPrints("179\n")
     }
 }

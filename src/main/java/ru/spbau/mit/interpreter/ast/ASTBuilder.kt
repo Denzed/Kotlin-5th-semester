@@ -10,9 +10,6 @@ import ru.spbau.mit.parser.FunParser
 private fun getStartPosition(context: ParserRuleContext): Pair<Int,Int> =
         Pair(context.start.line, context.start.charPositionInLine)
 
-private fun getOperator(op: Token): Pair<(Int, Int)->Int,String> =
-        BinaryExpression.operators[op.type] ?: throw UnknownOperatorException(op)
-
 object ASTBuilder : FunBaseVisitor<ASTNode>() {
     override fun visitFile(context: FunParser.FileContext): File =
             File(getStartPosition(context), visitBlock(context.block()))
@@ -144,6 +141,9 @@ object ExpressionBuilder : FunBaseVisitor<Expression>() {
 
         return FunctionCall(getStartPosition(context), name, parameters)
     }
+
+    private fun getOperator(op: Token): BinaryExpression.Companion.Operator =
+            BinaryExpression.operators[op.type] ?: throw UnknownOperatorException(op)
 
     override fun visitLorExpr(
             context: FunParser.LorExprContext
