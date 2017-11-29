@@ -27,19 +27,19 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
         return stackFrame?.functions?.get(function)
     }
 
-    private fun visitCondition(expression: Expression): Boolean =
-            visitExpression(expression) != 0
+    private fun interpretCondition(expression: Expression): Boolean =
+            interpretExpression(expression) != 0
 
-    override fun visitExpression(expression: Expression): Int =
+    private fun interpretExpression(expression: Expression): Int =
             expression.accept(this)!!
 
-    override fun visitFile(file: File): Int? = visit(file.block)
+    override fun visitFile(file: File): Int? = file.block.accept(this)
 
     override fun visitBlock(block: Block): Int? =
             block.statements
                     .asSequence()
                     .filter { statement -> statement !is Identifier }
-                    .map { statement -> visit(statement) }
+                    .map { statement -> statement.accept(this) }
                     .firstOrNull { returnValue -> returnValue != null }
 
     override fun visitFunctionDefinition(functionDefinition: FunctionDefinition): Int? {
@@ -68,12 +68,12 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
             )
         }
         stack.last().variables[variableDefinition.name] =
-                visitExpression(variableDefinition.value)
+                interpretExpression(variableDefinition.value)
         return null
     }
 
     override fun visitWhileCycle(whileCycle: WhileCycle): Int? {
-        while (visitCondition(whileCycle.condition)) {
+        while (interpretCondition(whileCycle.condition)) {
             val blockResult = whileCycle.body.accept(this)
             if (blockResult != null) {
                 return blockResult
@@ -83,10 +83,10 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
     }
 
     override fun visitIfClause(ifClause: IfClause): Int? =
-            if (visitCondition(ifClause.condition))
-                visit(ifClause.thenBody)
+            if (interpretCondition(ifClause.condition))
+                ifClause.thenBody.accept(this)
             else
-                ifClause.elseBody?.let(this::visit)
+                ifClause.elseBody?.accept(this)
 
     override fun visitVariableAssignment(variableAssignment: VariableAssignment): Int? {
         val stackFrame = findStackFrameForVariable(variableAssignment.name)
@@ -95,13 +95,13 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
                         variableAssignment.name
                 )
         stackFrame.variables[variableAssignment.name] =
-                visitExpression(variableAssignment.newValue)
+                interpretExpression(variableAssignment.newValue)
         return null
     }
 
     override fun visitPrintlnCall(printlnCall: PrintlnCall): Int? {
         println(printlnCall.parameters
-                .map(this::visitExpression)
+                .map(this::interpretExpression)
                 .joinToString(" ")
         )
         return null
@@ -111,7 +111,7 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
         if (stackDepth() == 0) {
             throw InvalidReturnStatementException(returnStatement.position)
         }
-        return visitExpression(returnStatement.expression)
+        return interpretExpression(returnStatement.expression)
     }
 
     override fun visitFunctionCall(functionCall: FunctionCall): Int {
@@ -122,7 +122,7 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
         )
         addStackFrame(StackFrame(
                 function.parameterNames
-                        .zip(functionCall.parameters.map(this::visitExpression))
+                        .zip(functionCall.parameters.map(this::interpretExpression))
                         .toMap()
                         .toMutableMap()
         )
@@ -145,11 +145,11 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
 
     override fun visitParenthesizedExpression(
             parenthesizedExpression: ParenthesizedExpression
-    ): Int = visitExpression(parenthesizedExpression.underlyingExpression)
+    ): Int = interpretExpression(parenthesizedExpression.underlyingExpression)
 
     override fun visitBinaryExpression(binaryExpression: BinaryExpression): Int =
             binaryExpression.operator(
-                    visitExpression(binaryExpression.left),
-                    visitExpression(binaryExpression.right)
+                    interpretExpression(binaryExpression.left),
+                    interpretExpression(binaryExpression.right)
             )
 }

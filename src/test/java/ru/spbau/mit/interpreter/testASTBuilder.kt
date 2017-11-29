@@ -1,19 +1,29 @@
 package ru.spbau.mit.interpreter
 import org.antlr.v4.runtime.BufferedTokenStream
 import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.ParserRuleContext
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import ru.spbau.mit.interpreter.ast.ASTBuilder
+import ru.spbau.mit.interpreter.ast.WithPosition
 import ru.spbau.mit.interpreter.ast.nodes.*
 import ru.spbau.mit.interpreter.ast.nodes.Number
-import ru.spbau.mit.interpreter.visitors.PositionRemovingASTVisitor
-import ru.spbau.mit.interpreter.visitors.PositionRemovingASTVisitor.blankPosition
 import ru.spbau.mit.parser.FunLexer
 import ru.spbau.mit.parser.FunParser
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.assertEquals
+
+val blankPosition = Pair(-1, -1)
+
+interface WithBlankPosition : WithPosition {
+    override fun getStartPosition(
+            context: ParserRuleContext
+    ): Pair<Int, Int> = blankPosition
+}
+
+object PositionForgettingASTBuilder : ASTBuilder(), WithBlankPosition
 
 class TestASTBuilder {
     private val errContent = ByteArrayOutputStream()
@@ -33,8 +43,7 @@ class TestASTBuilder {
     private fun parseToAST(code: String): ASTNode {
         val lexer = FunLexer(CharStreams.fromString(code))
         val parser = FunParser(BufferedTokenStream(lexer))
-        val ast = ASTBuilder.visit(parser.block())
-        return PositionRemovingASTVisitor.visit(ast)
+        return parser.block().accept(PositionForgettingASTBuilder)
     }
 
     @Test

@@ -1,11 +1,10 @@
 package ru.spbau.mit.interpreter.ast.nodes
 
 import ru.spbau.mit.interpreter.ast.visitors.ASTVisitor
+import ru.spbau.mit.interpreter.ast.visitors.ASTVisitorVisitable
 
-abstract class ASTNode {
+abstract class ASTNode : ASTVisitorVisitable {
     abstract val position: Pair<Int,Int>
-
-    abstract fun <T> accept(visitor: ASTVisitor<T>): T
 }
 
 data class File(

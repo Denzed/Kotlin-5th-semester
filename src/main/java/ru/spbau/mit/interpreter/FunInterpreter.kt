@@ -17,6 +17,6 @@ fun interpretCode(code: String): Int? =
 private fun interpretCharStream(charStream: CharStream): Int? {
     val lexer = FunLexer(charStream)
     val parser = FunParser(BufferedTokenStream(lexer))
-    val ast = ASTBuilder.visit(parser.file())
-    return InterpretingASTVisitor().visit(ast)
+    val ast = parser.file().accept(ASTBuilder())
+    return ast.accept(InterpretingASTVisitor())
 }

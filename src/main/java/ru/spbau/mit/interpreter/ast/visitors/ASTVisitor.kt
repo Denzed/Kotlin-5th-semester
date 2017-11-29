@@ -3,6 +3,10 @@ package ru.spbau.mit.interpreter.ast.visitors
 import ru.spbau.mit.interpreter.ast.nodes.*
 import ru.spbau.mit.interpreter.ast.nodes.Number
 
+interface ASTVisitorVisitable {
+    fun <T> accept(visitor: ASTVisitor<T>): T
+}
+
 interface ASTVisitor<out T> {
     fun visit(astNode: ASTNode): T = astNode.accept(this)
 
