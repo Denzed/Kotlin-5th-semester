@@ -43,15 +43,18 @@ class TestASTBuilder {
     private fun parseToAST(code: String): ASTNode {
         val lexer = FunLexer(CharStreams.fromString(code))
         val parser = FunParser(BufferedTokenStream(lexer))
-        return parser.block().accept(PositionForgettingASTBuilder)
+        return parser.file().accept(PositionForgettingASTBuilder)
     }
 
     @Test
     fun testLiteral() {
         val code = "179"
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(Number(blankPosition, 179))
+                Block(
+                        blankPosition,
+                        mutableListOf(Number(blankPosition, 179))
+            )
         )
 
         assertEquals(expectedTree, parseToAST(code))
@@ -60,9 +63,12 @@ class TestASTBuilder {
     @Test
     fun testIdentifier() {
         val code = "_s179"
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(Identifier(blankPosition, "_s179"))
+                Block(
+                        blankPosition,
+                        mutableListOf(Identifier(blankPosition, "_s179"))
+                )
         )
 
         assertEquals(expectedTree, parseToAST(code))
@@ -71,13 +77,16 @@ class TestASTBuilder {
     @Test
     fun testVariableDefinition() {
         val code = "var _s179 = 179"
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        VariableDefinition(
-                                blankPosition,
-                                "_s179",
-                                Number(blankPosition, 179)
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                VariableDefinition(
+                                        blankPosition,
+                                        "_s179",
+                                        Number(blankPosition, 179)
+                                )
                         )
                 )
         )
@@ -88,13 +97,16 @@ class TestASTBuilder {
     @Test
     fun testVariableAssignment() {
         val code = "_s179 = 179"
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        VariableAssignment(
-                                blankPosition,
-                                "_s179",
-                                Number(blankPosition, 179)
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                VariableAssignment(
+                                        blankPosition,
+                                        "_s179",
+                                        Number(blankPosition, 179)
+                                )
                         )
                 )
         )
@@ -106,14 +118,17 @@ class TestASTBuilder {
     fun testBinaryOperation() {
         val code = "1 + 178"
 
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        BinaryExpression(
-                                blankPosition,
-                                Number(blankPosition, 1),
-                                BinaryExpression.operators[FunParser.ADD]!!,
-                                Number(blankPosition, 178)
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                BinaryExpression(
+                                        blankPosition,
+                                        Number(blankPosition, 1),
+                                        BinaryExpression.operators[FunParser.ADD]!!,
+                                        Number(blankPosition, 178)
+                                )
                         )
                 )
         )
@@ -142,14 +157,17 @@ class TestASTBuilder {
                 )
         )
 
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        FunctionDefinition(
-                                blankPosition,
-                                "sum",
-                                mutableListOf("a", "b"),
-                                expectedFunctionBody
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                FunctionDefinition(
+                                        blankPosition,
+                                        "sum",
+                                        mutableListOf("a", "b"),
+                                        expectedFunctionBody
+                                )
                         )
                 )
         )
@@ -161,15 +179,18 @@ class TestASTBuilder {
     fun testFunctionCall() {
         val code = "sum(178, 1)"
 
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        FunctionCall(
-                                blankPosition,
-                                "sum",
-                                mutableListOf(
-                                        Number(blankPosition, 178),
-                                        Number(blankPosition, 1)
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                FunctionCall(
+                                        blankPosition,
+                                        "sum",
+                                        mutableListOf(
+                                                Number(blankPosition, 178),
+                                                Number(blankPosition, 1)
+                                        )
                                 )
                         )
                 )
@@ -182,17 +203,20 @@ class TestASTBuilder {
     fun testWhileCycle() {
         val code = "while (1) {}"
 
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        WhileCycle(
-                                blankPosition,
-                                Number(blankPosition, 1),
-                                ParenthesizedBlock(
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                WhileCycle(
                                         blankPosition,
-                                        Block(
+                                        Number(blankPosition, 1),
+                                        ParenthesizedBlock(
                                                 blankPosition,
-                                                mutableListOf()
+                                                Block(
+                                                        blankPosition,
+                                                        mutableListOf()
+                                                )
                                         )
                                 )
                         )
@@ -206,20 +230,23 @@ class TestASTBuilder {
     fun testIfClause() {
         val code = "if (1) {}"
 
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        IfClause(
-                                blankPosition,
-                                Number(blankPosition, 1),
-                                ParenthesizedBlock(
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                IfClause(
                                         blankPosition,
-                                        Block(
+                                        Number(blankPosition, 1),
+                                        ParenthesizedBlock(
                                                 blankPosition,
-                                                mutableListOf()
-                                        )
-                                ),
-                                null
+                                                Block(
+                                                        blankPosition,
+                                                        mutableListOf()
+                                                )
+                                        ),
+                                        null
+                                )
                         )
                 )
         )
@@ -231,24 +258,27 @@ class TestASTBuilder {
     fun testIfElseClause() {
         val code = "if (1) {} else {}"
 
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        IfClause(
-                                blankPosition,
-                                Number(blankPosition, 1),
-                                ParenthesizedBlock(
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                IfClause(
                                         blankPosition,
-                                        Block(
+                                        Number(blankPosition, 1),
+                                        ParenthesizedBlock(
                                                 blankPosition,
-                                                mutableListOf()
-                                        )
-                                ),
-                                ParenthesizedBlock(
-                                        blankPosition,
-                                        Block(
+                                                Block(
+                                                        blankPosition,
+                                                        mutableListOf()
+                                                )
+                                        ),
+                                        ParenthesizedBlock(
                                                 blankPosition,
-                                                mutableListOf()
+                                                Block(
+                                                        blankPosition,
+                                                        mutableListOf()
+                                                )
                                         )
                                 )
                         )
@@ -262,12 +292,15 @@ class TestASTBuilder {
     fun testReturnStatement() {
         val code = "return 179"
 
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        ReturnStatement(
-                                blankPosition,
-                                Number(blankPosition, 179)
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                ReturnStatement(
+                                        blankPosition,
+                                        Number(blankPosition, 179)
+                                )
                         )
                 )
         )
@@ -279,12 +312,15 @@ class TestASTBuilder {
     fun testParenthesizedExpression() {
         val code = "(1)"
 
-        val expectedTree = Block(
+        val expectedTree = File(
                 blankPosition,
-                mutableListOf(
-                        ParenthesizedExpression(
-                                blankPosition,
-                                Number(blankPosition, 1)
+                Block(
+                        blankPosition,
+                        mutableListOf(
+                                ParenthesizedExpression(
+                                        blankPosition,
+                                        Number(blankPosition, 1)
+                                )
                         )
                 )
         )
