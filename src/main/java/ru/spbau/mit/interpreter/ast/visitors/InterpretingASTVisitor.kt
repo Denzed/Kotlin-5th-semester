@@ -83,10 +83,11 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
     }
 
     override fun visitIfClause(ifClause: IfClause): Int? =
-            if (interpretCondition(ifClause.condition))
+            if (interpretCondition(ifClause.condition)) {
                 ifClause.thenBody.accept(this)
-            else
+            } else {
                 ifClause.elseBody?.accept(this)
+            }
 
     override fun visitVariableAssignment(variableAssignment: VariableAssignment): Int? {
         val stackFrame = findStackFrameForVariable(variableAssignment.name)
