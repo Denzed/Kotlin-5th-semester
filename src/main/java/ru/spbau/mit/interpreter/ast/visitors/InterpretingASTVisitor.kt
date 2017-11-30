@@ -127,7 +127,7 @@ class InterpretingASTVisitor : ASTVisitor<Int?> {
                         .toMutableMap()
         )
         )
-        val callResult = visit(function.body)
+        val callResult = function.body.accept(this)
         removeStackFrame()
         return callResult ?: 0
     }
