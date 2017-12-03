@@ -1,11 +1,6 @@
 package ru.spbau.mit.dsl
 
-import java.io.OutputStreamWriter
+private const val INDENTATION = "    "
 
-private val INDENTATION = "    "
-
-internal fun StringBuilder.appendIndent(indent: Int) =
-        append(INDENTATION.repeat(indent))
-
-internal fun OutputStreamWriter.appendIndent(indent: Int) =
+internal fun Appendable.appendIndent(indent: Int) =
         append(INDENTATION.repeat(indent))

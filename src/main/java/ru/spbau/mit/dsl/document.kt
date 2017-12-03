@@ -1,7 +1,5 @@
 package ru.spbau.mit.dsl
 
-import java.io.OutputStream
-
 fun document(init: Document.() -> Unit): Document {
     val document = Document()
     document.init()
@@ -19,26 +17,13 @@ class Document : BaseEnvironment("document") {
         }
     }
 
-    override fun render(builder: StringBuilder, indent: Int) {
+    override fun render(appendable: Appendable, indent: Int) {
         checkDocumentClass()
         for (item in preamble) {
-            item.render(builder, indent)
+            item.render(appendable, indent)
         }
-        builder.appendln() // blank line between preamble and document
-        super.render(builder, indent)
-    }
-
-    override fun toOutputStream(outputStream: OutputStream, indent: Int) {
-        checkDocumentClass()
-        for (item in preamble) {
-            item.toOutputStream(outputStream, indent)
-        }
-
-        outputStream.writer().run {
-            appendln() // blank line between preamble and document
-            close()
-        }
-        super.toOutputStream(outputStream, indent)
+        appendable.appendln() // blank line between preamble and document
+        super.render(appendable, indent)
     }
 
     private fun <T : Element> addPreambleElement(element: T) {

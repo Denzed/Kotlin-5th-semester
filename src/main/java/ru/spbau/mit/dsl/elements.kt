@@ -7,41 +7,31 @@ annotation class LatexMarker
 
 @LatexMarker
 abstract class Element {
-    abstract fun render(builder: StringBuilder, indent: Int)
-    abstract fun toOutputStream(outputStream: OutputStream, indent: Int = 0)
+    abstract internal fun render(appendable: Appendable, indent: Int)
 
-    override fun toString(): String {
-        val stringBuilder = StringBuilder()
-        render(stringBuilder, 0)
-        return stringBuilder.toString()
-    }
-}
-
-class TextElement(private val text: String) : Element() {
-    override fun toOutputStream(outputStream: OutputStream, indent: Int) {
+    fun toOutputStream(outputStream: OutputStream, indent: Int = 0) {
         outputStream.writer().run {
-            appendIndent(indent)
-            append(text)
+            render(this, indent)
             close()
         }
     }
 
-    override fun render(builder: StringBuilder, indent: Int) {
-        builder.appendIndent(indent)
-        builder.appendln(text)
-    }
-
     override fun toString(): String {
-        val builder = StringBuilder()
-        render(builder, 0)
-        return builder.toString()
+        return buildString { render(this, 0) }
+    }
+}
+
+class TextElement(private val text: String) : Element() {
+    override fun render(appendable: Appendable, indent: Int) {
+        appendable.appendIndent(indent)
+        appendable.appendln(text)
     }
 }
 
 abstract class ElementWithContents : Element() {
     private val contents = mutableListOf<Element>()
 
-    open fun <T : Element> addElement(
+    protected fun <T : Element> addElement(
             element: T,
             init: T.() -> Unit
     ): T {
@@ -50,48 +40,32 @@ abstract class ElementWithContents : Element() {
         return element
     }
 
-    protected open fun renderElement(
-            builder: StringBuilder,
+    private fun renderElement(
+            appendable: Appendable,
             indent: Int,
             element: Element
     ) {
-        element.render(builder, indent)
+        element.render(appendable, indent)
     }
 
-    protected open fun outputElement(
-            outputStream: OutputStream,
-            indent: Int,
-            element: Element
-    ) {
-        element.toOutputStream(outputStream, indent)
-    }
-
-    override fun render(builder: StringBuilder, indent: Int) {
+    override fun render(appendable: Appendable, indent: Int) {
         for (element in contents) {
-            renderElement(builder, indent, element)
+            renderElement(appendable, indent, element)
         }
     }
 
-    override fun toOutputStream(outputStream: OutputStream, indent: Int) {
-        for (element in contents) {
-            outputElement(outputStream, indent, element)
+    interface WithTextContents {
+        operator fun String.unaryPlus() {
+            if (this@WithTextContents is ElementWithContents) {
+                for (line in this.trimMargin().split('\n')) {
+                    addElement(TextElement(line), {})
+                }
+            }
         }
     }
 }
 
-interface WithTextContents {
-    // add text elements
-    fun <T : Element> addElement(
-            element: T,
-            init: T.() -> Unit
-    ): T
-
-    operator fun String.unaryPlus() {
-        for (line in this.trimMargin().split('\n')) {
-            addElement(TextElement(line), {})
-        }
-    }
-}
+interface WithTextContents : ElementWithContents.WithTextContents
 
 interface WithOptionalArguments {
     // for usage as named optional argument in vararg
