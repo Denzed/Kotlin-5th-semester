@@ -1,14 +1,11 @@
 package ru.spbau.mit
 
-fun getGreeting(): String {
-    val words = mutableListOf<String>()
-    words.add("Hello,")
-    
-    words.add("world!")
-
-    return words.joinToString(separator = " ")
-}
+import ru.spbau.mit.interpreter.interpretFile
 
 fun main(args: Array<String>) {
-    println(getGreeting())
+    if (args.isEmpty()) {
+        println("Please specify a file to interpret")
+    } else {
+        interpretFile(args[0])
+    }
 }
