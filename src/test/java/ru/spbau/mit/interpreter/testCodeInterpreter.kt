@@ -2,8 +2,6 @@ package ru.spbau.mit.interpreter
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import ru.spbau.mit.interpreter.ast.InvalidReturnStatementException
-import ru.spbau.mit.interpreter.ast.VariableUndefinedException
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.assertEquals
@@ -28,7 +26,8 @@ class TestCodeInterpreter {
     }
 
     private fun assertPrints(text: String) {
-        assert(outContent.toString() == text)
+        outContent.close()
+        assertEquals(text, outContent.toString())
     }
 
     @Test

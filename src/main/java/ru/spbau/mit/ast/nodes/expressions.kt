@@ -1,6 +1,6 @@
-package ru.spbau.mit.interpreter.ast.nodes
+package ru.spbau.mit.ast.nodes
 
-import ru.spbau.mit.interpreter.ast.visitors.ASTVisitor
+import ru.spbau.mit.ast.ASTVisitor
 import ru.spbau.mit.parser.FunParser
 
 abstract class Expression: Statement()
@@ -12,7 +12,7 @@ data class FunctionCall(
         val name: String,
         val parameters: List<Expression>
 ) : AtomicExpression() {
-    override fun <T> accept(visitor: ASTVisitor<T>): T =
+    override suspend fun <T> accept(visitor: ASTVisitor<T>): T =
             visitor.visitFunctionCall(this)
 
     override fun toString(): String = "$name(${parameters.joinToString()})"
@@ -22,7 +22,7 @@ data class Identifier(
         override val position: Pair<Int,Int>,
         val text: String
 ) : AtomicExpression() {
-    override fun <T> accept(visitor: ASTVisitor<T>): T =
+    override suspend fun <T> accept(visitor: ASTVisitor<T>): T =
             visitor.visitIdentifier(this)
 
     override fun toString(): String = text
@@ -34,7 +34,7 @@ data class Number(
         override val position: Pair<Int,Int>,
         val value: Int
 ) : Literal() {
-    override fun <T> accept(visitor: ASTVisitor<T>): T =
+    override suspend fun <T> accept(visitor: ASTVisitor<T>): T =
             visitor.visitNumber(this)
 
     override fun toString(): String = value.toString()
@@ -44,7 +44,7 @@ data class ParenthesizedExpression(
         override val position: Pair<Int,Int>,
         val underlyingExpression: Expression
 ) : AtomicExpression() {
-    override fun <T> accept(visitor: ASTVisitor<T>): T =
+    override suspend fun <T> accept(visitor: ASTVisitor<T>): T =
             visitor.visitParenthesizedExpression(this)
 
     override fun toString(): String = "($underlyingExpression)"
@@ -56,7 +56,7 @@ data class BinaryExpression(
         val operator: Operator,
         val right: Expression
 ) : Expression() {
-    override fun <T> accept(visitor: ASTVisitor<T>): T =
+    override suspend fun <T> accept(visitor: ASTVisitor<T>): T =
             visitor.visitBinaryExpression(this)
 
     override fun toString(): String = "$left ${operator.representation} $right"

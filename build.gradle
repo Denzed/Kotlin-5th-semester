@@ -18,6 +18,12 @@ apply plugin: 'kotlin'
 
 sourceCompatibility = 1.8
 
+kotlin {
+    experimental {
+        coroutines 'enable'
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -27,11 +33,21 @@ generateGrammarSource {
     arguments += ['-package', 'ru.spbau.mit.parser', '-visitor', '-no-listener']
     outputDirectory = new File("$buildDir/generated-src/antlr/main/ru/spbau/mit/parser")
 }
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'ru.spbau.mit.debugger.MainKt'
+    }
+
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
 compileJava.dependsOn generateGrammarSource
 compileKotlin.dependsOn generateGrammarSource
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:0.20"
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     compile "org.antlr:antlr4-runtime:4.7"

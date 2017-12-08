@@ -1,27 +1,19 @@
 package ru.spbau.mit.interpreter
 import org.antlr.v4.runtime.BufferedTokenStream
 import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.ParserRuleContext
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import ru.spbau.mit.interpreter.ast.ASTBuilder
-import ru.spbau.mit.interpreter.ast.WithPosition
-import ru.spbau.mit.interpreter.ast.nodes.*
-import ru.spbau.mit.interpreter.ast.nodes.Number
+import ru.spbau.mit.ast.ASTBuilder
+import ru.spbau.mit.ast.WithBlankPosition
+import ru.spbau.mit.ast.blankPosition
+import ru.spbau.mit.ast.nodes.*
+import ru.spbau.mit.ast.nodes.Number
 import ru.spbau.mit.parser.FunLexer
 import ru.spbau.mit.parser.FunParser
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.assertEquals
-
-val blankPosition = Pair(-1, -1)
-
-interface WithBlankPosition : WithPosition {
-    override fun getStartPosition(
-            context: ParserRuleContext
-    ): Pair<Int, Int> = blankPosition
-}
 
 object PositionForgettingASTBuilder : ASTBuilder(), WithBlankPosition
 
@@ -54,7 +46,7 @@ class TestASTBuilder {
                 Block(
                         blankPosition,
                         mutableListOf(Number(blankPosition, 179))
-            )
+                )
         )
 
         assertEquals(expectedTree, parseToAST(code))
@@ -151,7 +143,7 @@ class TestASTBuilder {
                                         blankPosition,
                                         Identifier(blankPosition, "a"),
                                         BinaryExpression.operators[FunParser.ADD]!!,
-                                        Identifier( blankPosition, "b")
+                                        Identifier(blankPosition, "b")
                                 )
                         )
                 )

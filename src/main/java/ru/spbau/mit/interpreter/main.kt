@@ -1,6 +1,4 @@
-package ru.spbau.mit
-
-import ru.spbau.mit.interpreter.interpretFile
+package ru.spbau.mit.interpreter
 
 fun main(args: Array<String>) {
     if (args.isEmpty()) {

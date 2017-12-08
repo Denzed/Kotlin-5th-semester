@@ -1,6 +1,6 @@
-package ru.spbau.mit.interpreter.ast.nodes
+package ru.spbau.mit.ast.nodes
 
-import ru.spbau.mit.interpreter.ast.visitors.ASTVisitor
+import ru.spbau.mit.ast.ASTVisitor
 
 abstract class Statement: ASTNode()
 
@@ -10,7 +10,7 @@ data class FunctionDefinition(
         val parameterNames: List<String>,
         val body: Block
 ) : Statement() {
-    override fun <T> accept(visitor: ASTVisitor<T>): T =
+    override suspend fun <T> accept(visitor: ASTVisitor<T>): T =
             visitor.visitFunctionDefinition(this)
 
     override fun toString(): String {
@@ -24,7 +24,7 @@ data class ParenthesizedBlock(
         override val position: Pair<Int,Int>,
         val underlyingBlock: Block
 ) : Statement() {
-    override fun <T> accept(visitor: ASTVisitor<T>): T =
+    override suspend fun <T> accept(visitor: ASTVisitor<T>): T =
             visitor.visitParenthesizedBlock(this)
 
     override fun toString(): String {
@@ -39,7 +39,7 @@ data class VariableDefinition(
         val name: String,
         val value: Expression
 ) : Statement() {
-    override fun <T> accept(visitor: ASTVisitor<T>): T =
+    override suspend fun <T> accept(visitor: ASTVisitor<T>): T =
             visitor.visitVariableDefinition(this)
 
     override fun toString(): String = "val $name = $value"
@@ -49,7 +49,7 @@ data class PrintlnCall(
         override val position: Pair<Int,Int>,
         val parameters: List<Expression>
 ) : Statement() {
-    override fun <T> accept(visitor: ASTVisitor<T>): T =
+    override suspend fun <T> accept(visitor: ASTVisitor<T>): T =
             visitor.visitPrintlnCall(this)
 
     override fun toString(): String = "println(${parameters.joinToString()})"

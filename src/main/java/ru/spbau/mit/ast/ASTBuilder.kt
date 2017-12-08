@@ -1,11 +1,19 @@
-package ru.spbau.mit.interpreter.ast
+package ru.spbau.mit.ast
 
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.Token
-import ru.spbau.mit.interpreter.ast.nodes.*
-import ru.spbau.mit.interpreter.ast.nodes.Number
+import ru.spbau.mit.ast.nodes.*
+import ru.spbau.mit.ast.nodes.Number
 import ru.spbau.mit.parser.FunBaseVisitor
 import ru.spbau.mit.parser.FunParser
+
+val blankPosition = Pair(-1, -1)
+
+interface WithBlankPosition : WithPosition {
+    override fun getStartPosition(
+            context: ParserRuleContext
+    ): Pair<Int, Int> = blankPosition
+}
 
 interface WithPosition {
     fun getStartPosition(context: ParserRuleContext): Pair<Int, Int> =
@@ -30,8 +38,11 @@ open class ASTBuilder : FunBaseVisitor<ASTNode>(), WithPosition {
                 )
     }
 
+    override fun visitExpression(context: FunParser.ExpressionContext): Expression =
+            context.accept(expressionBuilder)
+
     private inner class StatementBuilder : FunBaseVisitor<Statement>() {
-        private val parenthesizedBlockBuilder = ParenthesizeBlockBuilder()
+        private val parenthesizedBlockBuilder = ParenthesizedBlockBuilder()
 
         override fun visitFunctionDefinition(
                 context: FunParser.FunctionDefinitionContext
@@ -117,7 +128,7 @@ open class ASTBuilder : FunBaseVisitor<ASTNode>(), WithPosition {
         override fun visitExpression(context: FunParser.ExpressionContext): Expression =
                 context.accept(expressionBuilder)
 
-        private inner class ParenthesizeBlockBuilder : FunBaseVisitor<ParenthesizedBlock>() {
+        private inner class ParenthesizedBlockBuilder : FunBaseVisitor<ParenthesizedBlock>() {
             override fun visitParenthesizedBlock(
                     context: FunParser.ParenthesizedBlockContext
             ): ParenthesizedBlock = ParenthesizedBlock(
@@ -156,7 +167,8 @@ open class ASTBuilder : FunBaseVisitor<ASTNode>(), WithPosition {
 
         private fun getOperator(op: Token): BinaryExpression.Companion.Operator =
                 BinaryExpression.operators[op.type]
-                        ?: throw UnknownOperatorException(op)
+                    ?: throw UnknownOperatorException(op)
+
 
         override fun visitLorExpr(
                 context: FunParser.LorExprContext

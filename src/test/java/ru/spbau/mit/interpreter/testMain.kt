@@ -3,7 +3,6 @@ package ru.spbau.mit.interpreter
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import ru.spbau.mit.main
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.assertEquals
