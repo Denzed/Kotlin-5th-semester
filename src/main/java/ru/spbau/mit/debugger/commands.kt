@@ -8,26 +8,13 @@ import ru.spbau.mit.interpreter.InterpretingASTVisitor
 import ru.spbau.mit.parser.FunLexer
 import ru.spbau.mit.parser.FunParser
 
-interface CommandEvaluator {
-    suspend fun evaluateLoadCommand(loadCommand: LoadCommand)
-    fun evaluateBreakpointCommand(breakpointCommand: BreakpointCommand)
-    fun evaluateConditionCommand(conditionCommand: ConditionCommand)
-    fun evaluateListCommand()
-    fun evaluateRemoveCommand(removeCommand: RemoveCommand)
-    suspend fun evaluateRunCommand()
-    suspend fun evaluateContinueCommand()
-    suspend fun evaluateStopCommand()
-    fun evaluateEvaluateCommand(evaluateCommand: EvaluateCommand)
-    suspend fun evaluateExitCommand()
-}
-
 abstract class Command {
-    abstract suspend fun evaluate(evaluator: CommandEvaluator)
+    abstract suspend fun evaluate(debugger: FunDebugger)
 }
 
-data class LoadCommand(val fileName: String) : Command() {
-    override suspend fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateLoadCommand(this)
+data class LoadCommand(private val fileName: String) : Command() {
+    override suspend fun evaluate(debugger: FunDebugger) =
+            debugger.load(fileName)
 }
 
 sealed class Breakpoint {
@@ -49,62 +36,55 @@ object UnconditionalBreakpoint : Breakpoint() {
 }
 
 sealed class AbstractBreakpointCommand : Command() {
-    abstract val line: Int
-
-    abstract fun toBreakpoint(): Breakpoint
+    protected abstract val line: Int
 }
 
 data class BreakpointCommand(override val line: Int) : AbstractBreakpointCommand() {
-    override suspend fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateBreakpointCommand(this)
-
-    override fun toBreakpoint() = UnconditionalBreakpoint
+    override suspend fun evaluate(debugger: FunDebugger) =
+            debugger.addBreakpoint(line, UnconditionalBreakpoint)
 }
 
 data class ConditionCommand(
         override val line: Int,
         private val condition: Expression
 ) : AbstractBreakpointCommand() {
-    override suspend fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateConditionCommand(this)
-
-    override fun toBreakpoint(): Breakpoint =
-            ConditionalBreakpoint(condition)
+    override suspend fun evaluate(debugger: FunDebugger) =
+            debugger.addBreakpoint(line, ConditionalBreakpoint(condition))
 }
 
 object ListCommand : Command() {
-    override suspend fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateListCommand()
+    override suspend fun evaluate(debugger: FunDebugger) =
+            debugger.list()
 }
 
-data class RemoveCommand(val line: Int) : Command() {
-    suspend override fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateRemoveCommand(this)
+data class RemoveCommand(private val line: Int) : Command() {
+    suspend override fun evaluate(debugger: FunDebugger) =
+            debugger.removeBreakpoint(line)
 }
 
 object RunCommand : Command() {
-    override suspend fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateRunCommand()
+    override suspend fun evaluate(debugger: FunDebugger) =
+            debugger.runDebug()
 }
 
-data class EvaluateCommand(val expression: Expression) : Command() {
-    suspend override fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateEvaluateCommand(this)
+data class EvaluateCommand(private val expression: Expression) : Command() {
+    suspend override fun evaluate(debugger: FunDebugger) =
+            debugger.evaluateExpression(expression)
 }
 
 object StopCommand : Command() {
-    override suspend fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateStopCommand()
+    override suspend fun evaluate(debugger: FunDebugger) =
+            debugger.stopDebug()
 }
 
 object ContinueCommand : Command() {
-    override suspend fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateContinueCommand()
+    override suspend fun evaluate(debugger: FunDebugger) =
+            debugger.continueDebug()
 }
 
 object ExitCommand : Command() {
-    suspend override fun evaluate(evaluator: CommandEvaluator) =
-            evaluator.evaluateExitCommand()
+    suspend override fun evaluate(debugger: FunDebugger) =
+            debugger.exitDebugger()
 }
 
 fun buildCommand(commandString: String): Command {
@@ -132,12 +112,12 @@ fun buildCommand(commandString: String): Command {
         "list" -> ListCommand
         "remove" -> RemoveCommand(options[0].toInt())
         "run" -> RunCommand
-        "evaluate" -> EvaluateCommand(
+        "evaluateExpression" -> EvaluateCommand(
                 buildExpression(options.joinToString(" "))
         )
         "stop" -> StopCommand
         "continue" -> ContinueCommand
-        "exit" -> ExitCommand
+        "exitDebugger" -> ExitCommand
         else -> throw UnknownCommandException(commandString)
     }
 }

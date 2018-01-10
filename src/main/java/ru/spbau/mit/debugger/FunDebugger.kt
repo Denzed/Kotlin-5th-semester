@@ -1,6 +1,7 @@
 package ru.spbau.mit.debugger
 
 import kotlinx.coroutines.experimental.*
+import ru.spbau.mit.ast.nodes.Expression
 import ru.spbau.mit.ast.nodes.Statement
 import ru.spbau.mit.interpreter.InterpretingASTVisitor
 import ru.spbau.mit.interpreter.buildASTFromFile
@@ -32,7 +33,7 @@ fun <T> runDebugging(block: suspend CoroutineScope.(FunDebugger) -> T) =
 
 class FunDebugger internal constructor(
         val context: CoroutineContext
-) : Suspendable(), CommandEvaluator {
+) : Suspendable() {
     private var debugState: DebugState? = null
 
     internal val isRunning
@@ -41,29 +42,22 @@ class FunDebugger internal constructor(
     var exited = false
         private set
 
-    override suspend fun evaluateLoadCommand(loadCommand: LoadCommand) {
+    suspend fun load(fileName: String) {
         debugState?.cancel(
                 CancellationException(
-                        "Finished debugging as a result of " +
-                                "LoadCommand(${loadCommand.fileName}) evaluation"
+                        "Finished debug before loading a new file $fileName"
                 )
         )
-        debugState = DebugState(loadCommand.fileName)
+        debugState = DebugState(fileName)
     }
 
-    override fun evaluateBreakpointCommand(breakpointCommand: BreakpointCommand) {
+    fun addBreakpoint(line: Int, breakpoint: Breakpoint) {
         debugState?.run {
-            breakpoints[breakpointCommand.line] = breakpointCommand.toBreakpoint()
+            breakpoints[line] = breakpoint
         }
     }
 
-    override fun evaluateConditionCommand(conditionCommand: ConditionCommand) {
-        debugState?.run {
-            breakpoints[conditionCommand.line] = conditionCommand.toBreakpoint()
-        }
-    }
-
-    override fun evaluateListCommand() {
+    fun list() {
         print(
                 buildString {
                     appendln("Breakpoints:")
@@ -80,13 +74,13 @@ class FunDebugger internal constructor(
         )
     }
 
-    override fun evaluateRemoveCommand(removeCommand: RemoveCommand) {
+    fun removeBreakpoint(line: Int) {
         debugState?.run {
-            breakpoints.remove(removeCommand.line)
+            breakpoints.remove(line)
         }
     }
 
-    override suspend fun evaluateRunCommand() {
+    suspend fun runDebug() {
         when {
             isRunning -> {
                 debugState?.cancel(
@@ -99,7 +93,7 @@ class FunDebugger internal constructor(
         }
     }
 
-    override suspend fun evaluateContinueCommand() {
+    suspend fun continueDebug() {
         if (isRunning) {
             suspendWithAction { debugState?.resume() }
         } else {
@@ -107,11 +101,11 @@ class FunDebugger internal constructor(
         }
     }
 
-    override suspend fun evaluateStopCommand() {
+    suspend fun stopDebug() {
         if (isRunning) {
             debugState?.cancel(
                     CancellationException(
-                            "Finished debugging as a result of StopCommand evaluation"
+                            "Stopped debug"
                     )
             )
         } else {
@@ -120,20 +114,20 @@ class FunDebugger internal constructor(
         println("Debug stopped")
     }
 
-    override fun evaluateEvaluateCommand(evaluateCommand: EvaluateCommand) {
+    fun evaluateExpression(expression: Expression) {
         val result = runBlocking {
             debugState?.interpreter?.let {
-                evaluateCommand.expression.accept(it)
+                expression.accept(it)
             }
         }
         println("Evaluation result: $result")
     }
 
-    override suspend fun evaluateExitCommand() {
+    suspend fun exitDebugger() {
         if (isRunning) {
             debugState?.cancel(
                     CancellationException(
-                            "Finished debugging as a result of ExitCommand evaluation"
+                            "Finished debug before debugger exitDebugger"
                     )
             )
         }

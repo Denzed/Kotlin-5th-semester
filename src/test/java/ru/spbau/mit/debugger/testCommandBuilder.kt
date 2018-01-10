@@ -88,7 +88,7 @@ class TestCommandBuilder {
         )
         assertEquals(
                 EvaluateCommand(expression),
-                buildCommand("evaluate $expression")
+                buildCommand("evaluateExpression $expression")
         )
     }
 

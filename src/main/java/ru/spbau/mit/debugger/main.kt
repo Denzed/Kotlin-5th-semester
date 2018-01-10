@@ -9,10 +9,10 @@ fun printHelp() {
         |   list – lists breakpoints with line numbers and conditions.
         |   remove <line-number> – removes breakpoint from the given line.
         |   run – runs the loaded file. Everything printed would be forwarded to standard output. If interpreted line contains a breakpoint and its condition is satisfied, the interpretation is paused. If the program was already running, an error is thrown.
-        |   evaluate <expression> – evaluates an expression in the context of current line.
+        |   evaluateExpression <expression> – evaluates an expression in the context of current line.
         |   stop – stops the interpretation.
         |   continue – continues the interpretation until the next breakpoint or the file end.
-        |   exit – stops the interpretation and exits the debugger.
+        |   exitDebugger – stops the interpretation and exits the debugger.
     """.trimMargin())
 }
 
