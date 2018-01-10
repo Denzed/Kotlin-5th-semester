@@ -225,3 +225,5 @@ open class ASTBuilder : FunBaseVisitor<ASTNode>(), WithPosition {
         )
     }
 }
+
+object PositionForgettingASTBuilder : ASTBuilder(), WithBlankPosition

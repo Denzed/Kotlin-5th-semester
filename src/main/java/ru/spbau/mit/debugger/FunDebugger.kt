@@ -30,61 +30,63 @@ fun <T> runDebugging(block: suspend CoroutineScope.(FunDebugger) -> T) =
             block(debugger)
         }
 
-
 class FunDebugger internal constructor(
         val context: CoroutineContext
-) : Suspendable() {
-    private val breakpoints = mutableMapOf<Int,Breakpoint>()
+) : Suspendable(), CommandEvaluator {
     private var debugState: DebugState? = null
 
     internal val isRunning
         get() = debugState?.isRunning == true
 
-    private var exited = false
+    var exited = false
+        private set
 
-    val hasExited
-        get() = exited
-
-    internal suspend fun evaluateLoadCommand(loadCommand: LoadCommand) {
+    override suspend fun evaluateLoadCommand(loadCommand: LoadCommand) {
         debugState?.cancel(
                 CancellationException(
                         "Finished debugging as a result of " +
                                 "LoadCommand(${loadCommand.fileName}) evaluation"
                 )
         )
-        breakpoints.clear()
         debugState = DebugState(loadCommand.fileName)
     }
 
-    internal fun evaluateBreakpointCommand(breakpointCommand: BreakpointCommand) {
-        breakpoints[breakpointCommand.line] = breakpointCommand.toBreakpoint()
+    override fun evaluateBreakpointCommand(breakpointCommand: BreakpointCommand) {
+        debugState?.run {
+            breakpoints[breakpointCommand.line] = breakpointCommand.toBreakpoint()
+        }
     }
 
-    internal fun evaluateConditionCommand(conditionCommand: ConditionCommand) {
-        breakpoints[conditionCommand.line] = conditionCommand.toBreakpoint()
+    override fun evaluateConditionCommand(conditionCommand: ConditionCommand) {
+        debugState?.run {
+            breakpoints[conditionCommand.line] = conditionCommand.toBreakpoint()
+        }
     }
 
-    internal fun evaluateListCommand() {
+    override fun evaluateListCommand() {
         print(
                 buildString {
                     appendln("Breakpoints:")
-                    for ((line, breakpoint) in breakpoints) {
-                        val description = when (breakpoint) {
-                            is UnconditionalBreakpoint -> "unconditional"
-                            is ConditionalBreakpoint -> "condition = (${breakpoint.condition})"
-                            else -> throw InvalidBreakpointTypeException(breakpoint)
+                    debugState?.run {
+                        for ((line, breakpoint) in breakpoints) {
+                            val description = when (breakpoint) {
+                                is UnconditionalBreakpoint -> "unconditional"
+                                is ConditionalBreakpoint -> "condition = (${breakpoint.condition})"
+                            }
+                            appendln("\tline $line: $description")
                         }
-                        appendln("\tline $line: $description")
                     }
                 }
         )
     }
 
-    internal fun evaluateRemoveCommand(removeCommand: RemoveCommand) {
-        breakpoints.remove(removeCommand.line)
+    override fun evaluateRemoveCommand(removeCommand: RemoveCommand) {
+        debugState?.run {
+            breakpoints.remove(removeCommand.line)
+        }
     }
 
-    internal suspend fun evaluateRunCommand() {
+    override suspend fun evaluateRunCommand() {
         when {
             isRunning -> {
                 debugState?.cancel(
@@ -97,7 +99,7 @@ class FunDebugger internal constructor(
         }
     }
 
-    internal suspend fun evaluateContinueCommand() {
+    override suspend fun evaluateContinueCommand() {
         if (isRunning) {
             suspendWithAction { debugState?.resume() }
         } else {
@@ -105,7 +107,7 @@ class FunDebugger internal constructor(
         }
     }
 
-    internal suspend fun evaluateStopCommand() {
+    override suspend fun evaluateStopCommand() {
         if (isRunning) {
             debugState?.cancel(
                     CancellationException(
@@ -118,7 +120,7 @@ class FunDebugger internal constructor(
         println("Debug stopped")
     }
 
-    internal fun evaluateEvaluateCommand(evaluateCommand: EvaluateCommand) {
+    override fun evaluateEvaluateCommand(evaluateCommand: EvaluateCommand) {
         val result = runBlocking {
             debugState?.interpreter?.let {
                 evaluateCommand.expression.accept(it)
@@ -127,7 +129,7 @@ class FunDebugger internal constructor(
         println("Evaluation result: $result")
     }
 
-    internal suspend fun evaluateExitCommand() {
+    override suspend fun evaluateExitCommand() {
         if (isRunning) {
             debugState?.cancel(
                     CancellationException(
@@ -139,6 +141,7 @@ class FunDebugger internal constructor(
     }
 
     private inner class DebugState(fileName: String) : Suspendable() {
+        val breakpoints = mutableMapOf<Int,Breakpoint>()
         val interpreter = DebuggingASTVisitor()
         val ast = buildASTFromFile(fileName)
 
@@ -161,18 +164,15 @@ class FunDebugger internal constructor(
 
         private suspend fun checkBreakpoint(line: Int) {
             val breakpoint = breakpoints[line] ?: return
-            when (breakpoint) {
-                is UnconditionalBreakpoint -> {
-                    println("Stopping at line $line unconditionally")
-                    this@DebugState.suspendWithAction { this@FunDebugger.resume() }
-                }
-                is ConditionalBreakpoint ->
-                    if (breakpoint.condition.accept(interpreter) != 0) {
+            if (breakpoint.shouldStopInCurrentContext(interpreter)) {
+                when (breakpoint) {
+                    is UnconditionalBreakpoint ->
+                        println("Stopping at line $line unconditionally")
+                    is ConditionalBreakpoint ->
                         println("Stopping at line $line because " +
                                 "(${breakpoint.condition}) evaluates to \"true\"")
-                        this@DebugState.suspendWithAction { this@FunDebugger.resume() }
-                    }
-                else -> throw InvalidBreakpointTypeException(breakpoint)
+                }
+                this@DebugState.suspendWithAction { this@FunDebugger.resume() }
             }
         }
 

@@ -4,8 +4,7 @@ import org.antlr.v4.runtime.CharStreams
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import ru.spbau.mit.ast.ASTBuilder
-import ru.spbau.mit.ast.WithBlankPosition
+import ru.spbau.mit.ast.PositionForgettingASTBuilder
 import ru.spbau.mit.ast.blankPosition
 import ru.spbau.mit.ast.nodes.*
 import ru.spbau.mit.ast.nodes.Number
@@ -14,8 +13,6 @@ import ru.spbau.mit.parser.FunParser
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.assertEquals
-
-object PositionForgettingASTBuilder : ASTBuilder(), WithBlankPosition
 
 class TestASTBuilder {
     private val errContent = ByteArrayOutputStream()

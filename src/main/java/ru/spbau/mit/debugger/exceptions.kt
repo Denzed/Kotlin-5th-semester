@@ -2,10 +2,6 @@ package ru.spbau.mit.debugger
 
 abstract class DebugException(message: String) : Exception(message)
 
-class InvalidBreakpointTypeException(breakpoint: Breakpoint) : DebugException(
-        "Unexpected Breakpoint type met: \"${breakpoint::class.java.name}\""
-)
-
 class DebugAlreadyRunningException : DebugException(
         "Debug is already running"
 )

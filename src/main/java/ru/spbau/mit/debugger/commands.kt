@@ -2,36 +2,61 @@ package ru.spbau.mit.debugger
 
 import org.antlr.v4.runtime.BufferedTokenStream
 import org.antlr.v4.runtime.CharStreams
-import ru.spbau.mit.ast.ASTBuilder
-import ru.spbau.mit.ast.WithBlankPosition
+import ru.spbau.mit.ast.PositionForgettingASTBuilder
 import ru.spbau.mit.ast.nodes.Expression
+import ru.spbau.mit.interpreter.InterpretingASTVisitor
 import ru.spbau.mit.parser.FunLexer
 import ru.spbau.mit.parser.FunParser
 
+interface CommandEvaluator {
+    suspend fun evaluateLoadCommand(loadCommand: LoadCommand)
+    fun evaluateBreakpointCommand(breakpointCommand: BreakpointCommand)
+    fun evaluateConditionCommand(conditionCommand: ConditionCommand)
+    fun evaluateListCommand()
+    fun evaluateRemoveCommand(removeCommand: RemoveCommand)
+    suspend fun evaluateRunCommand()
+    suspend fun evaluateContinueCommand()
+    suspend fun evaluateStopCommand()
+    fun evaluateEvaluateCommand(evaluateCommand: EvaluateCommand)
+    suspend fun evaluateExitCommand()
+}
+
 abstract class Command {
-    abstract suspend fun evaluate(debugger: FunDebugger)
+    abstract suspend fun evaluate(evaluator: CommandEvaluator)
 }
 
 data class LoadCommand(val fileName: String) : Command() {
-    override suspend fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateLoadCommand(this)
+    override suspend fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateLoadCommand(this)
 }
 
-abstract class Breakpoint
+sealed class Breakpoint {
+    abstract suspend fun shouldStopInCurrentContext(
+            interpreter: InterpretingASTVisitor
+    ): Boolean
+}
 
-object UnconditionalBreakpoint : Breakpoint()
+data class ConditionalBreakpoint(val condition: Expression) : Breakpoint() {
+    override suspend fun shouldStopInCurrentContext(
+            interpreter: InterpretingASTVisitor
+    ): Boolean = condition.accept(interpreter) != 0
+}
 
-data class ConditionalBreakpoint(val condition: Expression) : Breakpoint()
+object UnconditionalBreakpoint : Breakpoint() {
+    override suspend fun shouldStopInCurrentContext(
+            interpreter: InterpretingASTVisitor
+    ): Boolean = true
+}
 
-sealed class AbstractBreakpoint : Command() {
+sealed class AbstractBreakpointCommand : Command() {
     abstract val line: Int
 
     abstract fun toBreakpoint(): Breakpoint
 }
 
-data class BreakpointCommand(override val line: Int) : AbstractBreakpoint() {
-    override suspend fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateBreakpointCommand(this)
+data class BreakpointCommand(override val line: Int) : AbstractBreakpointCommand() {
+    override suspend fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateBreakpointCommand(this)
 
     override fun toBreakpoint() = UnconditionalBreakpoint
 }
@@ -39,47 +64,47 @@ data class BreakpointCommand(override val line: Int) : AbstractBreakpoint() {
 data class ConditionCommand(
         override val line: Int,
         private val condition: Expression
-) : AbstractBreakpoint() {
-    override suspend fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateConditionCommand(this)
+) : AbstractBreakpointCommand() {
+    override suspend fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateConditionCommand(this)
 
     override fun toBreakpoint(): Breakpoint =
             ConditionalBreakpoint(condition)
 }
 
 object ListCommand : Command() {
-    override suspend fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateListCommand()
+    override suspend fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateListCommand()
 }
 
 data class RemoveCommand(val line: Int) : Command() {
-    suspend override fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateRemoveCommand(this)
+    suspend override fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateRemoveCommand(this)
 }
 
 object RunCommand : Command() {
-    override suspend fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateRunCommand()
+    override suspend fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateRunCommand()
 }
 
 data class EvaluateCommand(val expression: Expression) : Command() {
-    suspend override fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateEvaluateCommand(this)
+    suspend override fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateEvaluateCommand(this)
 }
 
 object StopCommand : Command() {
-    override suspend fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateStopCommand()
+    override suspend fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateStopCommand()
 }
 
 object ContinueCommand : Command() {
-    override suspend fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateContinueCommand()
+    override suspend fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateContinueCommand()
 }
 
 object ExitCommand : Command() {
-    suspend override fun evaluate(debugger: FunDebugger) =
-            debugger.evaluateExitCommand()
+    suspend override fun evaluate(evaluator: CommandEvaluator) =
+            evaluator.evaluateExitCommand()
 }
 
 fun buildCommand(commandString: String): Command {
@@ -89,7 +114,7 @@ fun buildCommand(commandString: String): Command {
 
         return parser
                 .expression()
-                .accept(object : ASTBuilder(), WithBlankPosition {})
+                .accept(PositionForgettingASTBuilder)
                 as Expression
     }
 

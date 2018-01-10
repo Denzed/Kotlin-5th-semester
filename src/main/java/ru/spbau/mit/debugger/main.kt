@@ -18,7 +18,7 @@ fun printHelp() {
 
 fun main(args: Array<String>) = runDebugging { debugger ->
     printHelp()
-    while (!debugger.hasExited) {
+    while (!debugger.exited) {
         try {
             print("> ")
             val inputLine = readLine()
